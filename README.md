@@ -152,14 +152,12 @@ The concatenated $RS(255, 223) + CC(7, 1/2)$ system was simulated over AWGN chan
 - At $I=1$, burst errors emerging from the Viterbi decoder overwhelm the outer Reed-Solomon error correction capacity ($t = 16$ bytes), causing an error floor around $\text{BER} \approx 10^{-3}$.
 - At **$I=8$**, burst errors are uniformly dispersed across 8 independent RS codewords, yielding an extremely steep waterfall curve reaching quasi-error-free (QEF) communication ($\text{BER} < 10^{-7}$) at **$E_b/N_0 = 2.4\text{ dB}$** (a **$7.2\text{ dB}$ coding gain** over uncoded QPSK).
 
----
-
-### 2. Dual-Branch Flywheel Synchronization Gain
+### 2. Dual-Branch Flywheel Synchronization Gain (vs gr-satellites)
 
 <p align="center">
-  <img src="docs/figures/sync_ber_comparison.png" alt="Sync BER Comparison" width="720"/>
+  <img src="docs/figures/ber_curves_frame_sync_comparison.png" alt="Performance comparison between gr-satellites and custom synchronizer" width="750"/>
   <br/>
-  <em>Figure 4: Comparative BER performance of the custom dual-branch flywheel synchronizer against standard single-branch synchronization under phase rotational dynamics.</em>
+  <em>Figure 4: Performance comparison between the standard frame synchronization algorithm provided by the <code>gr-satellites</code> library and the custom-implemented dual-branch flywheel synchronizer, demonstrating the complete elimination of the artificial correlation error floor.</em>
 </p>
 
 ---
@@ -237,7 +235,7 @@ Profiling the $28\text{ Mbps}$ real-time SDR pipeline on an Intel Core i7 host C
     ├── figures/                   # High-resolution vector & raster figures for documentation
     │   ├── ccsds_pipeline_architecture.png
     │   ├── ber_interleaving_performance.png
-    │   ├── sync_ber_comparison.png
+    │   ├── ber_curves_frame_sync_comparison.png
     │   ├── dual_branch_flywheel_sync.png
     │   ├── costas_robustness_doppler.png
     │   ├── doppler_burst_loss.png
