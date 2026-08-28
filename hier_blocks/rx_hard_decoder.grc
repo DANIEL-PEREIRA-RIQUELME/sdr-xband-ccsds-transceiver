@@ -1,0 +1,655 @@
+options:
+  parameters:
+    author: Daniel Pereira Riquelme
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: hb
+    hier_block_src_path: '.:'
+    id: rx_hard_decoder
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Receiver (hard decoder)
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: constel
+  id: variable_constellation
+  parameters:
+    comment: ''
+    const_points: digital.psk_4()[0]
+    dims: '1'
+    normalization: digital.constellation.AMPLITUDE_NORMALIZATION
+    npwr: '1.0'
+    precision: soft_decision_precision
+    rot_sym: '4'
+    soft_dec_lut: '''auto'''
+    sym_map: digital.psk_4()[1]
+    type: calcdist
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [208, 8.0]
+    rotation: 0
+    state: enabled
+- name: variable_cc_decoder_def_0
+  id: variable_cc_decoder_def
+  parameters:
+    comment: ''
+    dim1: '1'
+    dim2: '1'
+    framebits: '2072'
+    k: '7'
+    mode: fec.CC_STREAMING
+    ndim: '0'
+    padding: 'False'
+    polys: '[79,-109]'
+    rate: '2'
+    state_end: '-1'
+    state_start: '0'
+    value: '"ok"'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [480, 8.0]
+    rotation: 0
+    state: enabled
+- name: HighDataRate_Modem_Decode_RS_0
+  id: HighDataRate_Modem_Decode_RS
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    dual_basis: 'True'
+    interleave: '5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    pad: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [888, 1148.0]
+    rotation: 0
+    state: true
+- name: HighDataRate_Modem_Frame_Extract_xx_0
+  id: HighDataRate_Modem_Frame_Extract_xx
+  parameters:
+    ASM_length: '32'
+    affinity: ''
+    alias: ''
+    buffer_length: '15000'
+    comment: ''
+    frame_length: '2072'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: byte
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [672, 1064.0]
+    rotation: 180
+    state: true
+- name: HighDataRate_Modem_Resolve_Phase_0
+  id: HighDataRate_Modem_Resolve_Phase
+  parameters:
+    affinity: ''
+    alias: ''
+    buffer_length: '120000'
+    comment: ''
+    frame_length: '2072'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    threshold: '1'
+    waveform: '2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [488, 1064.0]
+    rotation: 180
+    state: true
+- name: blocks_add_const_vxx_0
+  id: blocks_add_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: '-0.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1848, 828.0]
+    rotation: 180
+    state: enabled
+- name: blocks_char_to_float_0
+  id: blocks_char_to_float
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    scale: '1'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1856, 724.0]
+    rotation: 0
+    state: enabled
+- name: blocks_multiply_const_vxx_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    const: '2.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1664, 828.0]
+    rotation: 180
+    state: enabled
+- name: blocks_null_sink_1
+  id: blocks_null_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    bus_structure_sink: '[[0,],]'
+    comment: ''
+    num_inputs: '1'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [120, 1048.0]
+    rotation: 180
+    state: enabled
+- name: blocks_pack_k_bits_bb_0_0
+  id: blocks_pack_k_bits_bb
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    k: '8'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [512, 1148.0]
+    rotation: 0
+    state: enabled
+- name: blocks_stream_demux_0
+  id: blocks_stream_demux
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    lengths: (32,2040)
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_outputs: '2'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [288, 1052.0]
+    rotation: 180
+    state: enabled
+- name: blocks_stream_to_vector_2_0_0
+  id: blocks_stream_to_vector
+  parameters:
+    affinity: '3'
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_items: '255'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [680, 1160.0]
+    rotation: 0
+    state: enabled
+- name: blocks_tag_gate_0
+  id: blocks_tag_gate
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    propagate_tags: 'False'
+    single_key: '""'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1152, 1044.0]
+    rotation: 180
+    state: true
+- name: blocks_unpack_k_bits_bb_0
+  id: blocks_unpack_k_bits_bb
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    k: '2'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1680, 724.0]
+    rotation: 0
+    state: enabled
+- name: blocks_vector_to_stream_0
+  id: blocks_vector_to_stream
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_items: '223'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1152, 1160.0]
+    rotation: 0
+    state: enabled
+- name: chess_ccsds_descrambler_rx_1
+  id: chess_ccsds_descrambler_rx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [272, 1160.0]
+    rotation: 0
+    state: enabled
+- name: digital_constellation_decoder_cb_0
+  id: digital_constellation_decoder_cb
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    constellation: constel
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1416, 724.0]
+    rotation: 0
+    state: enabled
+- name: digital_correlate_access_code_tag_xx_0
+  id: digital_correlate_access_code_tag_xx
+  parameters:
+    access_code: '00011010110011111111110000011101'
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    tagname: TagASM
+    threshold: '1'
+    type: byte
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [880, 1032.0]
+    rotation: 180
+    state: enabled
+- name: digital_costas_loop_cc_0_0
+  id: digital_costas_loop_cc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    order: '4'
+    use_snr: 'False'
+    w: loop_bw_costas
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1048, 740.0]
+    rotation: 0
+    state: enabled
+- name: digital_symbol_sync_xx_0
+  id: digital_symbol_sync_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    constellation: digital.constellation_bpsk().base()
+    damping: '1.0'
+    loop_bw: loop_bw_sync
+    max_dev: '1.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nfilters: '128'
+    osps: '1'
+    pfb_mf_taps: '[]'
+    resamp_type: digital.IR_MMSE_8TAP
+    sps: sps
+    ted_gain: '1.0'
+    ted_type: digital.TED_GARDNER
+    type: cc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [664, 732.0]
+    rotation: 0
+    state: enabled
+- name: fec_extended_decoder_0
+  id: fec_extended_decoder
+  parameters:
+    affinity: ''
+    alias: ''
+    ann: None
+    comment: ''
+    decoder_list: variable_cc_decoder_def_0
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    puncpat: '''11'''
+    threadtype: capillary
+    value: fec_extended_decoder
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1368, 1020.0]
+    rotation: 180
+    state: enabled
+- name: loop_bw_costas
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: ''
+    type: ''
+    value: 2*3.14159/1000
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [816, 260.0]
+    rotation: 0
+    state: enabled
+- name: loop_bw_sync
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: ''
+    type: ''
+    value: '0.045'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [688, 260.0]
+    rotation: 0
+    state: enabled
+- name: pad_sink_0
+  id: pad_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    label: out
+    num_streams: '1'
+    optional: 'False'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1328, 1356.0]
+    rotation: 0
+    state: enabled
+- name: pad_sink_0_0_0
+  id: pad_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    label: sync_out
+    num_streams: '1'
+    optional: 'False'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1048, 588.0]
+    rotation: 0
+    state: enabled
+- name: pad_sink_0_0_1
+  id: pad_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    label: Costas_out
+    num_streams: '1'
+    optional: 'False'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1352, 588.0]
+    rotation: 0
+    state: enabled
+- name: pad_source_0
+  id: pad_source
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    label: in
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_streams: '1'
+    optional: 'False'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [208, 564.0]
+    rotation: 0
+    state: enabled
+- name: rolloff
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: ''
+    type: ''
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [592, 260.0]
+    rotation: 0
+    state: enabled
+- name: root_raised_cosine_filter_0
+  id: root_raised_cosine_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha: rolloff
+    comment: ''
+    decim: '1'
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    ntaps: '32'
+    samp_rate: samp_rate
+    sym_rate: samp_rate/sps
+    type: fir_filter_ccf
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [408, 752.0]
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: ''
+    type: ''
+    value: '25000000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [208, 260.0]
+    rotation: 0
+    state: enabled
+- name: soft_decision_precision
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: ''
+    type: ''
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [408, 260.0]
+    rotation: 0
+    state: enabled
+- name: sps
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: ''
+    short_id: ''
+    type: ''
+    value: '2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [312, 260.0]
+    rotation: 0
+    state: enabled
+
+connections:
+- [HighDataRate_Modem_Decode_RS_0, '0', blocks_vector_to_stream_0, '0']
+- [HighDataRate_Modem_Frame_Extract_xx_0, '0', HighDataRate_Modem_Resolve_Phase_0,
+  '0']
+- [HighDataRate_Modem_Resolve_Phase_0, '0', blocks_stream_demux_0, '0']
+- [blocks_add_const_vxx_0, '0', blocks_multiply_const_vxx_0, '0']
+- [blocks_char_to_float_0, '0', blocks_add_const_vxx_0, '0']
+- [blocks_multiply_const_vxx_0, '0', fec_extended_decoder_0, '0']
+- [blocks_pack_k_bits_bb_0_0, '0', blocks_stream_to_vector_2_0_0, '0']
+- [blocks_stream_demux_0, '0', blocks_null_sink_1, '0']
+- [blocks_stream_demux_0, '1', chess_ccsds_descrambler_rx_1, '0']
+- [blocks_stream_to_vector_2_0_0, '0', HighDataRate_Modem_Decode_RS_0, '0']
+- [blocks_tag_gate_0, '0', digital_correlate_access_code_tag_xx_0, '0']
+- [blocks_unpack_k_bits_bb_0, '0', blocks_char_to_float_0, '0']
+- [blocks_vector_to_stream_0, '0', pad_sink_0, '0']
+- [chess_ccsds_descrambler_rx_1, '0', blocks_pack_k_bits_bb_0_0, '0']
+- [digital_constellation_decoder_cb_0, '0', blocks_unpack_k_bits_bb_0, '0']
+- [digital_correlate_access_code_tag_xx_0, '0', HighDataRate_Modem_Frame_Extract_xx_0,
+  '0']
+- [digital_costas_loop_cc_0_0, '0', digital_constellation_decoder_cb_0, '0']
+- [digital_costas_loop_cc_0_0, '0', pad_sink_0_0_1, '0']
+- [digital_symbol_sync_xx_0, '0', digital_costas_loop_cc_0_0, '0']
+- [digital_symbol_sync_xx_0, '0', pad_sink_0_0_0, '0']
+- [fec_extended_decoder_0, '0', blocks_tag_gate_0, '0']
+- [pad_source_0, '0', root_raised_cosine_filter_0, '0']
+- [root_raised_cosine_filter_0, '0', digital_symbol_sync_xx_0, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.12.0

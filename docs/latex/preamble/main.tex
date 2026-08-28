@@ -1,0 +1,127 @@
+%%% Preamble
+
+%% Data about the document, like title, author, etc.
+\input{preamble/data}
+
+%% DEBUG: various helper debug goodies
+\input{preamble/debug/commands}
+\input{preamble/debug/line-numbers}
+\input{preamble/debug/silence}
+
+%% Colors
+\input{preamble/general/colors}
+
+%% Typesetting, figures, tables, etc.
+\input{preamble/general/typesetting}
+\input{preamble/general/floats}
+
+%% Hyperlinks, PDF metadata
+\input{preamble/general/hyperref}
+
+%% Miscellaneous commands/macros
+\input{preamble/misc/macros}
+\input{preamble/misc/packages-macros}
+\input{preamble/misc/tikz}
+\input{preamble/misc/inkscape}
+
+%% Layout of the document, formatting of chapters, sections, TOC, etc.
+\input{preamble/layout/geometry}
+\input{preamble/layout/numbering}
+\input{preamble/layout/headers}
+\input{preamble/layout/titles}
+\input{preamble/layout/toc}
+
+%% Bibliography/References configuration
+\input{preamble/references/biblatex}
+
+%% Math stuff
+\input{preamble/math/packages}
+\input{preamble/math/fonts}
+\input{preamble/math/macros}
+\input{preamble/math/spacing}
+
+%% Theorem-like, Remark-like, and Todo-like environments
+\input{preamble/environments/init}
+\input{preamble/environments/theorem-like}
+\input{preamble/environments/remark-like}
+\input{preamble/environments/todo-like}
+
+%% Hacky stuff, oftentimes overriding commands of other packages
+\input{preamble/hacks/custom-reference-boxes}
+\input{preamble/hacks/fix-qed}
+\input{preamble/hacks/fix-hyperref}
+\input{preamble/hacks/floatrow-parskip}
+
+%% User macros
+\input{preamble/user/main}
+
+
+%% Custom
+\usepackage{pdflscape}
+\usepackage{rotating}
+
+
+
+\usepackage{listings} % Necesario para \lstdefinestyle y los entornos de código
+\usepackage{xcolor}   % Necesario para definir y usar los colores
+% ********************************************************************
+% Entorno para código C++
+\lstdefinestyle{styleCPP}{
+    language=C++,
+    escapeinside={\%*}{*)},          % permite añadir LaTeX dentro del código
+    basicstyle=\linespread{1}\ttfamily\footnotesize,
+    xleftmargin=40pt, 
+    xrightmargin=0pt,
+    frame=leftline,
+    framesep=9pt,
+    framerule=2pt,
+    rulecolor=\color{orange},        % Borde izquierdo en naranja
+    numbers=left,
+    numberstyle=\scriptsize\ttfamily\color{gray},
+    numbersep=20pt,
+    breakautoindent=true,
+    breakindent=20pt,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    commentstyle=\color{green!50!black}, % Verde estándar sin depender de "mygreen"
+    showstringspaces=false,
+    upquote=true,
+    backgroundcolor=\color{white}    % Fondo blanco independiente
+}
+
+% Comando para invocar el entorno C++
+\lstnewenvironment{cpp}[1][1]{\lstset{style=styleCPP, firstnumber=#1}}{}
+
+% ********************************************************************
+% Entorno para código Python
+\lstdefinestyle{stylePython}{
+    language=Python,
+    basicstyle=\linespread{1}\ttfamily\footnotesize,
+    xleftmargin=40pt,
+    xrightmargin=0pt,
+    frame=leftline,
+    framesep=9pt,
+    framerule=2pt,
+    rulecolor=\color{blue},          % Borde izquierdo en azul
+    numbers=left,
+    numberstyle=\scriptsize\ttfamily\color{gray},
+    numbersep=20pt,
+    breakautoindent=true,
+    breakindent=20pt,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    commentstyle=\color{green!50!black}, % Verde estándar sin depender de "mygreen"
+    showstringspaces=false,
+    upquote=true,
+    backgroundcolor=\color{white}    % Fondo blanco independiente
+}
+
+% Comando para invocar el entorno Python
+\lstnewenvironment{python}[1][1]{\lstset{style=stylePython, firstnumber=#1}}{}
+\newcommand{\invASM}{\rotatebox[origin=c]{180}{MSA}}
+
+
+
+
+% Acronyms
+\usepackage{acronym}

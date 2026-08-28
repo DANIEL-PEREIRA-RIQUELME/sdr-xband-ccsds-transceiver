@@ -1,0 +1,18 @@
+% \setcounter{chapter}{16} % "Q" (17th letter, but latex first increments -> 17-1=16)
+% \chapter{Quick Summary}
+\chapternotnumbered{Quick Summary} \label{ch:Quick Summary}
+
+\vspace{2ex} % extra vertical space, since letter Q has a long tail
+
+\makebox{In \textbf{\Cref*{ch:Pipeline}}} we detail the CCSDS concatenated coding architecture (RS + Convolutional), pseudo-randomization, and baseband QPSK physical layer modeling.
+
+\makebox{In \textbf{\Cref*{ch:GNUradio}}} we present the end-to-end TX-RX simulation environment and validate our soft-decision decoding performance against standard curves.
+
+\makebox{In \textbf{\Cref*{ch:Doppler}}} we evaluate a two-stage Doppler compensation strategy combining coarse open-loop orbital prediction with a fine closed-loop Costas loop.
+
+\makebox{In \textbf{\Cref*{ch:Frame_sync}}} we resolve QPSK phase ambiguities and correlation floors by implementing a custom dual-branch feed-forward flywheel synchronizer.
+
+\makebox{In \textbf{\Cref*{ch:Link}}} we analyze the CHESS mission link budget scenarios and benchmark the real-time 28~Mbps computational footprint on a base station server.
+
+\makebox{In \textbf{\Cref*{ch:QO-100}}} we validate the physical ground station RF hardware chain by processing live DVB-S2 multimedia beacon signals from the geostationary Es'hail-2 satellite.
+

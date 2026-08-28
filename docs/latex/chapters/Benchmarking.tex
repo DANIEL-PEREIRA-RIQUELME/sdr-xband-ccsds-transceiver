@@ -1,0 +1,28 @@
+
+\chapter{Benchmarking and Experimental Results \todo{In progress}} \label{ch:Benchmarking}
+
+
+\section{Performance Curves}
+
+\section{Resource Utilization and Work Time}
+
+
+\todo{Podría meter el benchmarking y experiental results dentro del GNU radio implementation la verdad}
+
+
+
+\section{Introduction to the Profiling Environment}
+
+The provided bar chart represents the central processing unit utilization of individual threads spawned by a GNU Radio flowgraph, specifically running under a Python script. By utilizing the Linux top command with the thread-display flag enabled, the operating system reveals the precise computational load that each individual digital signal processing block places on the hardware. Instead of aggregating the CPU usage into a single process metric, this perspective isolates the resource consumption of every active component within the software-defined radio pipeline, providing critical insights into system bottlenecks and processing efficiency.
+
+\section{The Thread-Per-Block Architecture}
+
+To understand the metrics presented in the graph, it is essential to comprehend how GNU Radio manages data flow. GNU Radio operates fundamentally on a thread-per-block scheduling paradigm. When a flowgraph is executed, every individual processing block—such as filters, decoders, or synchronizers—is assigned its own dedicated software thread. These independent threads communicate with one another through ring buffers. When a block has sufficient input data in its buffer, its thread is awakened by the operating system, it performs its specific mathematical operations, pushes the resulting data to the output buffer, and then returns to a dormant state. Because each block is an independent thread, the operating system attempts to execute them simultaneously, enabling parallel processing.
+
+\section{Hardware Utilization and Multicore Dynamics}
+
+In a system equipped with 16 physical cores, the operating system's scheduler has the capability of distributing these threads across multiple available processors without having to constantly swap them in and out of a single core. The percentages shown in the graph—such as 93.0\% for the PFB Clock Sync block—represent the utilization of a single physical core, not the entire 16-core system. In Linux top metrics, 100\% equates to one fully saturated core. Therefore, the cumulative CPU usage of all the threads in this flowgraph is approximately 370\%, which means the entire GNU Radio application is consuming the equivalent computational power of nearly four dedicated physical cores, leaving the remaining twelve cores largely unutilized.
+
+\section{Identifying System Bottlenecks}
+
+Despite the abundance of available processing power in a 16-core system, the overall throughput of the software-defined radio receiver is strictly limited by its heaviest single-threaded operation. In this specific scenario, the Polyphase Filterbank (PFB) Clock Sync block is operating at 93.0\% capacity, and the Constellation Soft Decoder follows closely at 86.4\%. Because a single GNU Radio block cannot natively divide its internal mathematical workload across multiple cores, the pipeline is entirely dependent on the single-core performance of the processor. If the PFB Clock Sync block reaches 100\% utilization, it will be unable to process the incoming sample stream fast enough. This scenario inevitably leads to buffer overflows or underflows, ultimately resulting in dropped samples and data corruption, regardless of how many idle cores remain available in the broader system.

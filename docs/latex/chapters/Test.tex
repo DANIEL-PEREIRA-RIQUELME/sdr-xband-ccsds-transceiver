@@ -1,0 +1,123 @@
+\chapter{Test} \label{ch:Test}
+
+\newpage
+\Nref{ch:References}
+\autocite{TeXtured}
+If you encounter any issues, please see \href{https://github.com/jdujava/TeXtured/issues/2}{\texttt{jdujava/TeXtured \#2}} and \href{https://github.com/jdujava/TeXtured/issues/5}{\texttt{jdujava/TeXtured \#5}}.
+
+
+% 1. Inline usage
+This is a sentence about the X-Band pipeline \todo{Verify bandwidth parameters}. 
+You can also categorize them: \todo[Urgent]{Fix the Viterbi rate calculation}.
+
+% 2. Full environment usage
+\begin{Todo}[Missing References]
+    We need to add the specific Blue Book versions for the AOS Space Data Link Protocol here.
+\end{Todo}
+
+\begin{Question}
+    Should we use a 1/2 or 3/4 convolutional rate for the Astra benchmarking?
+\end{Question}
+
+\begin{Suggestion}[Optimization]
+    Consider replacing the standard PLL with an EKF to improve phase tracking in high-Doppler LEO scenarios.
+\end{Suggestion}
+
+\begin{Note}
+    The current LNB has a TCXO with 1 ppm stability, which should be sufficient for initial X-Band tests.
+\end{Note}
+
+H00pa \\\textcolor{gray}{at first subconscious}
+
+
+\autocite[pág. 20]{CCSDS_131_0_B_5}
+
+\newpage
+De acuerdo con el artículo científico, los autores caracterizan el efecto Doppler utilizando el término \textbf{Doppler normalizado} y derivan expresiones analíticas aproximadas simplificando la geometría orbital.
+
+\section{Expresión del Efecto Doppler (Doppler Normalizado)}
+
+La expresión analítica exacta del Doppler normalizado, definida en el artículo como la relación entre el cambio de frecuencia y la frecuencia transmitida ($\frac{\Delta f}{f}$), corresponde a la \textbf{ecuación (5)}:
+
+\begin{equation}
+\frac{\Delta f}{f} = -\frac{1}{c}\frac{r_{E}r \sin(\psi(t)-\psi(t_{0}))\cos\left(\cos^{-1}\left(\frac{r_{E}}{r}\cos \theta_{max}\right)-\theta_{max}\right)\cdot\omega_{F}(t)}{\sqrt{r_{E}^{2}+r^{2}-2r_{E}r \cos(\psi(t)-\psi(t_{0}))\cos\left(\cos^{-1}\left(\frac{r_{E}}{r}\cos \theta_{max}\right)-\theta_{max}\right)}}
+\end{equation}
+
+\subsection*{Nomenclatura de variables:}
+\begin{itemize}
+    \item $c$: Velocidad de la luz en el vacío.
+    \item $r_{E}$: Radio de la Tierra.
+    \item $r$: Distancia desde el centro de la Tierra al satélite ($r = r_{E} + h$, donde $h$ es la altitud de la órbita).
+    \item $\theta_{max}$: Ángulo de elevación máximo observado por la terminal terrestre durante la ventana de visibilidad.
+    \item $t_{0}$: Instante de tiempo en el que ocurre el Doppler cero (coincide con el momento de máxima elevación).
+    \item $\psi(t)-\psi(t_{0})$: Distancia angular recorrida por la traza del satélite sobre la superficie terrestre desde el instante de referencia $t_{0}$.
+    \item $\omega_{F}(t)$: Velocidad angular del satélite medida en el sistema de referencia de la Tierra Fija (ECF).
+\end{itemize}
+
+\section{Expresión de la Curva (Aproximación de Velocidad Angular Constante)}
+
+Para modelar matemáticamente la curva en forma de ``S'' que describe el comportamiento del Doppler a lo largo del tiempo, los autores introducen una simplificación clave: asumen que la variación de la velocidad angular en el marco ECF es muy pequeña ($<3\%$) y, por lo tanto, puede tratarse como una constante ($\omega_{F}(t) \approx \omega_{F}$).
+
+Bajo esta suposición, la distancia angular de la traza se linealiza respecto al tiempo mediante la \textbf{ecuación (10)}:
+\begin{equation}
+\psi(t) - \psi(t_{0}) \approx \omega_{F}(t - t_{0})
+\end{equation}
+
+Sustituyendo esta relación en la ecuación principal, la expresión que modela la \textbf{curva Doppler en función del tiempo} queda de la siguiente forma:
+
+\begin{equation}
+\frac{\Delta f}{f} \approx -\frac{1}{c}\frac{r_{E}r \sin(\omega_{F}(t-t_{0}))\cos(\gamma(t_{0}))\cdot\omega_{F}}{\sqrt{r_{E}^{2}+r^{2}-2r_{E}r \cos(\omega_{F}(t-t_{0}))\cos(\gamma(t_{0}))}}
+\end{equation}
+
+Donde el ángulo central constante en el momento de máxima elevación, $\gamma(t_{0})$, se define a partir de la \textbf{ecuación (4)}:
+\begin{equation}
+\cos(\theta_{max}+\gamma(t_{0}))=\frac{r_{E}}{r}\cos \theta_{max}
+\end{equation}
+
+Asimismo, la velocidad angular constante del sistema se aproxima mediante su valor en la latitud más alta (donde la velocidad tangencial relativa es mínima), expresada en la \textbf{ecuación (9)}:
+\begin{equation}
+\omega_{F} \approx \omega_{s} - \omega_{E}\cos i
+\end{equation}
+
+Donde $\omega_{s}$ es la velocidad angular del satélite en el marco inercial (ECI), $\omega_{E}$ es la velocidad angular de rotación de la Tierra e $i$ representa la inclinación de la órbita del satélite LEO.
+
+
+
+\begin{table}[htbp]
+\centering
+\caption{Payload Downlink Budget for the CHESS Mission (X-band)}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{l l c c c l}
+\toprule
+\textbf{Item} & \textbf{Symbol} & \textbf{Adverse} & \textbf{Nominal} & \textbf{Favourable} & \textbf{Unit} \\
+\midrule
+Frequency & $f$ & 10.475 & 10.475 & 10.475 & GHz \\
+Data Rate & $R$ & 10 & 25 & 25 & Mbps \\
+S/C Output Power & $P$ & 0.47 & 1.48 & 5.29 & W \\
+S/C Antenna Gain & $G_t$ & 17 & 19 & 21 & dBi \\
+EIRP & - & 9.27 & 17 & 25.2 & dBW \\
+S/C Max. Altitude & $H$ & 505 & 500 & 495 & km \\
+GS Min. Elevation & $\varepsilon$ & 15 & 15 & 15 & deg \\
+GS Antenna Gain & $G_r$ & 40 & 40.7 & 43.1 & dBi \\
+GS Noise Temperature & $T_0$ & 148.5 & 135 & 121.5 & K \\
+GS Figure of Merit & $G/T$ & 15.2 & 15.7 & 16.1 & dB/K \\
+Various Losses\textsuperscript{a} & $L_{misc}$ & -6.23 & -5.47 & -4.33 & dB \\
+\midrule
+$E_b/N_0$ & - & 6.1 & 9.1 & 20.6 & dB \\
+Required $E_b/N_0$ & - & 2.3 & 2.3 & 2.3 & dB \\
+\textbf{Margin} & - & \textbf{3.8} & \textbf{6.8} & \textbf{18.3} & \textbf{dB} \\
+\bottomrule
+\multicolumn{6}{l}{\footnotesize \textsuperscript{a} Includes S/C \& GS pointing, line, atmospheric, and polarization losses.}
+\end{tabular}
+\end{table}
+
+
+\begin{cpp}
+#include <iostream>
+
+int main() {
+    // Este es un comentario en C++
+    std::cout << "¡Hola desde C++!" << std::endl;
+    return 0;
+}
+\end{cpp}

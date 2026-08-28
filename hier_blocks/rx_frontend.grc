@@ -1,0 +1,344 @@
+options:
+  parameters:
+    author: ''
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: hb
+    hier_block_src_path: '.:'
+    id: rx_frontend
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: run
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: RX Frontend
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 12.0
+    rotation: 0
+    state: enabled
+blocks:
+- name: constel
+  id: variable_constellation
+  parameters:
+    comment: ''
+    const_points: digital.psk_2()[0]
+    dims: '1'
+    normalization: digital.constellation.AMPLITUDE_NORMALIZATION
+    npwr: '1.0'
+    precision: '8'
+    rot_sym: '4'
+    soft_dec_lut: '''auto'''
+    sym_map: digital.psk_2()[1]
+    type: calcdist
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 152.0
+    rotation: 0
+    state: disabled
+- name: constel
+  id: variable_constellation
+  parameters:
+    comment: ''
+    const_points: digital.psk_4()[0]
+    dims: '1'
+    normalization: digital.constellation.AMPLITUDE_NORMALIZATION
+    npwr: '1.0'
+    precision: '8'
+    rot_sym: '4'
+    soft_dec_lut: '''auto'''
+    sym_map: digital.psk_4()[1]
+    type: calcdist
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 8
+    - 184.0
+    rotation: 0
+    state: enabled
+- name: variable_cc_decoder_def_0
+  id: variable_cc_decoder_def
+  parameters:
+    comment: 'I=1; 2072
+
+      I=5; 10232'
+    dim1: '1'
+    dim2: '1'
+    framebits: '16352'
+    k: '7'
+    mode: fec.CC_STREAMING
+    ndim: '0'
+    padding: 'False'
+    polys: '[79,-109]'
+    rate: '2'
+    state_end: '-1'
+    state_start: '0'
+    value: '"ok"'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 432
+    - 16.0
+    rotation: 0
+    state: enabled
+- name: variable_cc_decoder_def_1
+  id: variable_cc_decoder_def
+  parameters:
+    comment: 'I=1; 2072
+
+      I=5; 10232'
+    dim1: '1'
+    dim2: '1'
+    framebits: '16352'
+    k: '7'
+    mode: fec.CC_STREAMING
+    ndim: '0'
+    padding: 'False'
+    polys: '[79,-109]'
+    rate: '2'
+    state_end: '-1'
+    state_start: '0'
+    value: '"ok"'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 648
+    - 16.0
+    rotation: 0
+    state: enabled
+- name: variable_cc_encoder_def_0
+  id: variable_cc_encoder_def
+  parameters:
+    comment: 'I=1; 2072
+
+      I=5; 10232'
+    dim1: '1'
+    dim2: '1'
+    framebits: '16352'
+    k: '7'
+    mode: fec.CC_STREAMING
+    ndim: '0'
+    padding: 'False'
+    polys: '[79,-109]'
+    rate: '2'
+    state_start: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 864
+    - 16.0
+    rotation: 0
+    state: enabled
+- name: analog_agc_xx_0
+  id: analog_agc_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    gain: '1.0'
+    max_gain: '65536'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    rate: 1e-4
+    reference: '1.0'
+    type: complex
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 2696
+    - 1068.0
+    rotation: 0
+    state: enabled
+- name: digital_costas_loop_cc_0_0
+  id: digital_costas_loop_cc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    order: '4'
+    use_snr: 'False'
+    w: '0.002'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 3008
+    - 1412.0
+    rotation: 180
+    state: enabled
+- name: digital_symbol_sync_xx_0
+  id: digital_symbol_sync_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    constellation: digital.constellation_bpsk().base()
+    damping: '1.0'
+    loop_bw: '0.004'
+    max_dev: '1.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nfilters: '128'
+    osps: '1'
+    pfb_mf_taps: '[]'
+    resamp_type: digital.IR_MMSE_8TAP
+    sps: sps
+    ted_gain: '1.0'
+    ted_type: digital.TED_GARDNER
+    type: cc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 2800
+    - 644.0
+    rotation: 0
+    state: disabled
+- name: import_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import math
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 312
+    - 12.0
+    rotation: 0
+    state: enabled
+- name: root_raised_cosine_filter_0
+  id: root_raised_cosine_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha: rolloff
+    comment: ''
+    decim: '1'
+    gain: '1'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    ntaps: '32'
+    samp_rate: samp_rate
+    sym_rate: samp_rate/sps
+    type: fir_filter_ccf
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 2544
+    - 664.0
+    rotation: 0
+    state: disabled
+- name: pad_source_0
+  id: pad_source
+  parameters:
+    label: in
+    num_streams: '1'
+    type: complex
+    vlen: '1'
+    optional: 'False'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 100
+    - 200
+    rotation: 0
+    state: enabled
+- name: pad_sink_0
+  id: pad_sink
+  parameters:
+    label: out
+    num_streams: '1'
+    type: complex
+    vlen: '1'
+    optional: 'False'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 800
+    - 200
+    rotation: 0
+    state: enabled
+- name: sps
+  id: parameter
+  parameters:
+    label: sps
+    type: int
+    value: '2'
+    hide: none
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate:
+    - 100
+    - 50
+    rotation: 0
+    state: enabled
+connections:
+- - analog_agc_xx_0
+  - '0'
+  - root_raised_cosine_filter_0
+  - '0'
+- - digital_symbol_sync_xx_0
+  - '0'
+  - digital_costas_loop_cc_0_0
+  - '0'
+- - root_raised_cosine_filter_0
+  - '0'
+  - digital_symbol_sync_xx_0
+  - '0'
+- - pad_source_0
+  - '0'
+  - analog_agc_xx_0
+  - '0'
+- - digital_costas_loop_cc_0_0
+  - '0'
+  - pad_sink_0
+  - '0'
+metadata:
+  file_format: 1
+  grc_version: 3.10.12.0

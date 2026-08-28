@@ -1,0 +1,55 @@
+\chapter{Physical Layer Error Probability} \label{appendix:physical_layer}
+
+\section{Optimal Detection for the Vector AWGN Channel}
+
+Consider a digital communication system transmitting information over a continuous time physical medium. The information source generates a message $m$ chosen from a finite discrete alphabet $\mathcal{M} = \{1, 2, \dots, M\}$. The transmitter maps this message into a distinct continuous-time signal waveform $s_m(t)$ with finite energy. As this signal propagates through the Additive White Gaussian Noise (AWGN) channel, it is corrupted by a zero-mean random noise process $n(t)$.
+\begin{align*}
+    \bm{r} &= \bm{s}_m + \bm{n}
+\end{align*}
+The fundamental objective of the receiver is to employ a decision operation, a mapping $\mathsf{D}: \mathbb{R}^N \to \mathcal{M}$, that observes $\bm{r}$ and produces an estimate $\hat{m}$ of the transmitted message. To minimize the probability of making an erroneous decision, the receiver must implement the Maximum A Posteriori (MAP) detection criterion. Applying Bayes' theorem, and letting $\mathsf{P}_m$ denote the prior probability of transmitting message $m$, the decision rule is formulated as:
+\begin{align*}
+    \hat{m} &= \arg\max_{m \in \mathcal{M}} \{ \mathsf{P}_m \, p(\bm{r}|\bm{s}_m) \} \\
+            &= \arg\max_{m \in \mathcal{M}} \left\{ \mathsf{P}_m \left(\frac{1}{\sqrt{\pi N_0}}\right)^N \exp\left(-\frac{||\bm{r} - \bm{s}_m||^2}{N_0}\right) \right\}
+\end{align*}
+where $N_0/2$ represents the two-sided power spectral density of the noise, and $p(\bm{r}|\bm{s}_m)$ is the multivariate Gaussian conditional probability density function.
+
+In modern communication systems, the input data stream is typically passed through a randomizer or scrambler, rendering the transmitted signals equiprobable (i.e., $\mathsf{P}_m = 1/M$ for all $m \in \mathcal{M}$). Under this condition, the MAP detector systematically simplifies into the Maximum Likelihood (ML) detector. Since the exponential function is monotonically decreasing, maximizing the likelihood is mathematically equivalent to minimizing the squared Euclidean distance between the received vector $\bm{r}$ and the candidate signal points $\bm{s}_m$. Therefore, the optimal decision rule simplifies to the minimum-distance detector:
+\begin{align*}
+    \hat{m} &= \arg\max_{m \in \mathcal{M}} \{ p(\bm{r}|\bm{s}_m) \} \\
+            &= \arg\min_{m \in \mathcal{M}} ||\bm{r} - \bm{s}_m||
+\end{align*}
+This geometric interpretation directly dictates the formation of decision regions within the signal space $\mathbb{R}^N$. For any given signal point $\bm{s}_m$, its corresponding decision region $\mathcal{D}_m$ encompasses all points in the vector space that are closer to $\bm{s}_m$ than to any other candidate signal $\bm{s}_{m'}$. The boundary separating any two adjacent regions $\mathcal{D}_m$ and $\mathcal{D}_{m'}$ is a hyperplane comprising points strictly equidistant from both signals. Formally, the decision region is defined as the set:
+\begin{align*}
+    \mathcal{D}_m &= \{ \bm{r} \in \mathbb{R}^N : ||\bm{r} - \bm{s}_m|| < ||\bm{r} - \bm{s}_{m'}|| \quad \forall m' \in \mathcal{M} \setminus \{m\} \}
+\end{align*}
+To rigorously evaluate the performance of this system, we analyze the probability of symbol error, denoted as $\mathsf{P}_{\mathsf{e}}$. An error occurs whenever the received vector $\bm{r}$ falls outside the correct decision region $\mathcal{D}_m$ given that $\bm{s}_m$ was transmitted. By applying the law of total probability over the entire message alphabet $\mathcal{M}$, we obtain:
+\begin{align*}
+    \mathsf{P}_{\mathsf{e}} &= \sum_{m \in \mathcal{M}} \mathsf{P}_m \mathsf{P}[\bm{r} \notin \mathcal{D}_m | \bm{s}_m] \\
+                            &= \sum_{m \in \mathcal{M}} \mathsf{P}_m \mathsf{P}_{\mathsf{e}|m}
+\end{align*}
+The conditional probability of error, $\mathsf{P}_{\mathsf{e}|m}$, is evaluated by integrating the conditional likelihood function over the complement of the decision region, $\mathcal{D}_m^c$, which is geometrically equivalent to summing the integrals over all mutually exclusive incorrect regions $\mathcal{D}_{m'}$:
+\begin{align*}
+    \mathsf{P}_{\mathsf{e}|m} &= \int_{\mathcal{D}_m^c} p(\bm{r}|\bm{s}_m) \, d\bm{r} \\
+                              &= \sum_{m' \neq m} \int_{\mathcal{D}_{m'}} p(\bm{r}|\bm{s}_m) \, d\bm{r}
+\end{align*}
+
+
+\section{Error Probability for QPSK Modulation}
+
+We can now apply this theoretical framework to evaluate the Quadrature Phase Shift Keying (QPSK) scheme, where the cardinality of our alphabet is $|\mathcal{M}| = 4$. Due to the symmetric topology of the constellation, it is mathematically more tractable to compute the probability of a correct decision, $\mathsf{P}_{\mathsf{c}|m}^{\mathsf{QPSK}}$, and subtract it from unity. 
+
+Because the noise processes mapped to the orthogonal basis functions are statistically independent, the two-dimensional integral over the defined region $\mathcal{D}_m$ factors perfectly into the product of two one-dimensional Gaussian integrals. Expressing this in terms of the standard $\mathsf{Q}$-function and the minimum Euclidean distance $d_{\mathsf{min}}$ between adjacent constellation points, we find:
+\begin{align*}
+    \mathsf{P}_{\mathsf{e}|m}^{\mathsf{QPSK}} &= 1 - \mathsf{P}_{\mathsf{c}|m}^{\mathsf{QPSK}} \\
+                                              &= 1 - \int_{\mathcal{D}_m} p(\bm{r}|\bm{s}_m) \, d\bm{r} \\
+                                              &= 1 - \left[1 - \mathsf{Q}\left(\frac{d_{\mathsf{min}}}{\sqrt{2N_0}}\right)\right]\left[1 - \mathsf{Q}\left(\frac{d_{\mathsf{min}}}{\sqrt{2N_0}}\right)\right] \\
+                                              &= 2\mathsf{Q}\left(\frac{d_{\mathsf{min}}}{\sqrt{2N_0}}\right) - \mathsf{Q}^2\left(\frac{d_{\mathsf{min}}}{\sqrt{2N_0}}\right)
+\end{align*}
+
+Because all symbols are assumed to be equiprobable and the constellation maintains strict rotational symmetry, the conditional probability of error is identical for every transmission. Consequently, the average symbol error probability for the entire QPSK system precisely mirrors the conditional probability:
+\begin{align*}
+    \mathsf{P}_{\mathsf{e}}^{\mathsf{QPSK}} &= \mathsf{P}_{\mathsf{e}|m}^{\mathsf{QPSK}} \\
+                                            &= 2\mathsf{Q}\left(\frac{d_{\mathsf{min}}}{\sqrt{2N_0}}\right) - \mathsf{Q}^2\left(\frac{d_{\mathsf{min}}}{\sqrt{2N_0}}\right)
+\end{align*}
+
+%\todo[author=Daniel, inline]{Put the QPSK BER vs Eb/No curve}

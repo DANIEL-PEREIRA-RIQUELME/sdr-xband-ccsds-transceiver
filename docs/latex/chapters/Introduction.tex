@@ -1,0 +1,46 @@
+\chapternotnumbered{Introduction} \label{ch:Introduction}
+
+\begin{comment}
+Already when I started writing my bachelor thesis \autocite{Dujava2022}, I tweaked a lot the original \LaTeX{} template (which itself was slightly updated since then \autocite{MaresTemplate}) provided for students at MFF CUNI --- Faculty of Mathematics and Physics, Charles University in Prague.
+
+Some design choices originated already during this stage, particularly the significant use of theorem-like and remark-like environments with highly interlinked structure of the text.
+
+I picked up right where I left off when I started writing my master thesis \autocite{Dujava2025}, and I have been refining the template ever since.
+Improved understanding of the coding backbone behind \LaTeX{} and its package ecosystem enabled me to customize it even further to my liking, and add even more \enquote{bells and whistles}.
+
+\begin{remark}[Template Purpose]
+    While primarily targeting theses, \TeXtured{} can be used for other document types as well.
+\end{remark}
+
+To make it user-friendly, I have restructured the preamble into several files, each of which is responsible for a specific aspect of the document.
+This way, the user can (and is encouraged to) easily find the relevant part of the code and modify it.
+
+Numerous comments and explanations are provided throughout the code to further aid the user in understanding the template without always having to consult the documentation of packages (which is recommended for more advanced changes).
+
+\begin{remark}[How to Setup]
+    To set up \TeXtured{} template for your document, you can use the \texttt{Overleaf} template or clone the repository on \textsf{GitHub} \autocite{TeXtured}.
+    Then, you can start modifying the files to suit your needs.
+
+    Also make sure to check the \texttt{README.md} file for more detailed instructions, particularly on various software dependencies.
+    If you encounter any issues, please see \href{https://github.com/jdujava/TeXtured/issues/2}{\texttt{jdujava/TeXtured \#2}} and \href{https://github.com/jdujava/TeXtured/issues/5}{\texttt{jdujava/TeXtured \#5}}.
+\end{remark}    
+\end{comment}
+
+
+Low Earth Orbit (LEO) satellite missions increasingly rely on high data rates to transmit large volumes of scientific information during their brief visibility windows. A typical LEO pass lasts only a few minutes, requiring ground stations to capture gigabits of data reliably using highly precise tracking antennas. However, the radio frequency (RF) signals received on the ground are significantly degraded by free-space path loss, thermal noise, and a severe, time-varying Doppler shift caused by the satellite's high relative velocity. To ensure data integrity, these communication links must employ robust synchronization techniques and advanced error correction codes.
+
+\subsection*{Context and Motivation}
+The \textsf{CHESS} mission, developed by the \href{https://www.epflspacecraftteam.ch/}{\texttt{EPFL Spacecraft Team}}, exemplifies these challenges. Its upcoming CubeSat (\href{https://www.youtube.com/watch?v=YzKk7H1tVos}{\texttt{Pathfinder 0}}) is currently under development and is equipped with a high-performance mass spectrometer that generates an unprecedentedly large volume of scientific data. To successfully retrieve this information, a high-rate X-band downlink is required. 
+
+While the mission's ground segment already possesses a 2.4-meter tracking antenna and actively develops its pointing software, it currently lacks the receiver capable of demodulating and decoding this high-rate telemetry. Traditionally, such receivers relied on rigid, hardware-based application-specific integrated circuits (ASICs). Today, Software-Defined Radio (SDR) technology allows us to replace dedicated silicon with digital signal processing algorithms running on standard commercial off-the-shelf (COTS) computer servers. The primary goal of this project is to design and implement this missing SDR receiver, bridging the gap between the space and ground segments while operating within the constraints of available computational resources and adhering to strict aerospace communication standards.
+
+\subsection*{Project Objectives}
+The core objective of this project is to develop and validate a fully functional SDR receiver capable of reliably processing the satellite's high-rate X-band telemetry. To achieve this, the project is structured around the following specific goals:
+
+\begin{itemize}
+    \item \textcolor{gray}{Develop a Software-Defined Receiver:} Implement a modular SDR architecture capable of demodulating and decoding the telemetry in strict compliance with the CCSDS framework \autocite{CCSDS_131_0_B_5, CCSDS_132_0_B_3, gr_satellites, gr_highdatarate_modem}.
+    \item \textcolor{gray}{Compensate for Massive Doppler Shift:} Design a tracking system to continuously estimate and eliminate the severe kinematic frequency shifts introduced by the LEO orbit \autocite{ali1998doppler, dopplergnuradio, gr_gpredict_doppler}.
+    \item \textcolor{gray}{Analyze Link Viability and Parameter Selection:} Perform link budget analyses and system simulations to evaluate theoretical performance metrics (such as Bit Error Rate curves) and optimize transmission factors \autocite{CCSDS_130_1_G_3, Maral2009}.
+    \item \textcolor{gray}{Achieve Real-Time High-Throughput Execution:} Optimize the SDR receiver software to execute seamlessly in real time on the base station server, sustaining a stable target throughput of 25~Mbps without frame loss.
+    \item \textcolor{gray}{Validate Hardware and Antenna Integration:} Verify the functional receiver and tracking setup by successfully capturing and decoding live telemetry beacons from the QO-100 narrowband satellite under real-world conditions \autocite{LNB_Manual}.
+\end{itemize}

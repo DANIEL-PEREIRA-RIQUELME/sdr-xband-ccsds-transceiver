@@ -1,0 +1,108 @@
+\newcommand*{\TeXturedVERSION}{1.5.0} %% TeXtured 2025-08-06
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% NOTE: If you find any issues or have any suggestions, please open %%
+%%       an Issue on GitHub: https://github.com/jdujava/TeXtured     %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Enable built-in LaTeX support for PDF/A compliance (must be before `\documentclass`)
+\DocumentMetadata{lang=en, pdfversion=1.7, pdfstandard=A-2u}
+\input{preamble/pdfA-compliance/glyphtounicode}
+
+%% NOTE: Choose the desirable page layout version (electronic vs print)
+\documentclass[9pt,a4paper]{report}                      % single-side (electronic)
+% \documentclass[12pt,a4paper,openright,twoside]{report}  % two-sided (for printing)
+
+%% Set some toggle flags to control some of the document properties
+\input{preamble/toggles}
+% \FANCYfalse % disable some of the more fancy stylistic choices
+%% NOTE: Comment out the following lines for the final version
+\WIPfalse%\WIPtrue            % THIS IS A WORK-IN-PROGRESS VERSION
+% \EXTRAMARGINtrue  % add extra right margin in WIP version (for notes/corrections)
+% \LINKBOXESfalse   % disable reference/link boxes for faster compilations
+\CENSORtrue         % THIS IS A CENSORED VERSION
+
+%% Preamble - data, packages, macros, and more
+\input{preamble/main}
+\usepackage{graphicx}
+\usepackage{rotating}
+
+%% Only uncommented files are included (faster compilation)
+%% NOTE: If no files are uncommented, all files are included
+\includeonlysmart{
+    frontmatter/title,
+    frontmatter/declaration,
+    frontmatter/dedication,
+    frontmatter/information,
+    chapters/Introduction,
+    chapters/QuickSummary,
+    chapters/Notation,
+    %
+    chapters/Pipeline,
+    chapters/GNUradio,
+    chapters/Doppler,
+    chapters/Frame_sync,
+    %chapters/Benchmarking,
+    chapters/Link,
+    chapters/QO-100,
+    %
+    chapters/Test,
+    %
+    %
+    %chapters/ancient/Design,
+    %chapters/ancient/Usage,
+    %chapters/ancient/Features,
+    %chapters/ancient/Tips,
+    %chapters/ancient/Summary,
+    %chapters/Appendix,
+    chapters/Appendix1,
+    chapters/Appendix2,
+    chapters/Appendix3,
+}
+
+\begin{document}
+
+\frontmatter
+\include{frontmatter/title}
+% \include{frontmatter/declaration}
+\include{frontmatter/dedication}
+%\include{frontmatter/information}
+
+\contentsandlists
+
+%% -------- TODO --------
+%\todototoc
+%\listoftodos
+%% ---------------------------------
+
+\include{chapters/Introduction}
+\include{chapters/QuickSummary}
+\include{chapters/Notation}
+
+\mainmatter
+\include{chapters/Pipeline}
+\include{chapters/GNUradio}
+\include{chapters/Doppler}
+\include{chapters/Frame_sync.tex}
+%\include{chapters/Benchmarking}
+\include{chapters/Link}
+\include{chapters/QO-100}
+
+%\include{chapters/Test}
+
+%\include{chapters/ancient/Design}
+%\include{chapters/ancient/Usage}
+%\include{chapters/ancient/Features}
+%\include{chapters/ancient/Tips}
+
+\backmatter
+%\include{chapters/ancient/Summary}
+
+\appendix
+%\include{chapters/Appendix}
+\include{chapters/Appendix1}
+\include{chapters/Appendix2}
+\include{chapters/Appendix3}
+
+\references
+
+\end{document}
