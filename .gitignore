@@ -3,17 +3,46 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Large simulation binaries & captured outputs
+output/samples/test/*
+!output/samples/test/.gitkeep
+output/results/test/*
+!output/results/test/.gitkeep
+*.bin
+*.dat
+output_2m_*
+output_SNR_*
+
+# Large test vectors (>50 MB, exceeds GitHub limits)
+data/test_signal_0.06Ms_CCSDS_I_8
+data/test_signal_0.1Ms_*
+data/test_signal_0.2Ms_*
+data/test_signal_0.3Ms_*
+data/test_signal_1Ms_*
+
+# Compiled binaries and build artifacts
+scripts/diagnostic
+*.o
+*.so
+
 # LaTeX auxiliary build files
+docs/latex/*.aux
+docs/latex/*.bbl
+docs/latex/*.bcf
+docs/latex/*.blg
+docs/latex/*.fdb_latexmk
+docs/latex/*.fls
+docs/latex/*.log
+docs/latex/*.out
+docs/latex/*.run.xml
+docs/latex/*.synctex.gz
+docs/latex/*.toc
 *.aux
 *.bbl
 *.bcf
 *.blg
-*.fdb_latexmk
-*.fls
 *.log
 *.out
-*.run.xml
-*.synctex.gz
 *.toc
 .aux/
 
@@ -21,7 +50,12 @@ __pycache__/
 *.py.orig
 *.grc.orig
 
-# IDEs and OS
+# External Reference Literature and Textbooks
+docs/references/
+Page 1.pdf
+docs/Page 1.pdf
+
+# IDEs and OS files
 .idea/
 .vscode/
 *.swp

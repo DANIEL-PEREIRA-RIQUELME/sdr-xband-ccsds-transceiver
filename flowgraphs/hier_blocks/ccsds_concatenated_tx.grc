@@ -2,7 +2,7 @@ options:
   parameters:
     author: ''
     catch_exceptions: 'True'
-    category: '[GRC Hier Blocks]'
+    category: '[CHESS]/S-X Band/Hier Blocks'
     cmake_opt: ''
     comment: ''
     copyright: ''
@@ -11,7 +11,7 @@ options:
     gen_linking: dynamic
     generate_options: hb
     hier_block_src_path: '.:'
-    id: tx_ccsds_baseband
+    id: ccsds_concatenated_tx
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -19,43 +19,20 @@ options:
     realtime_scheduling: ''
     run: 'True'
     run_command: '{python} -u {filename}'
-    run_options: run
+    run_options: prompt
     sizing_mode: fixed
     thread_safe_setters: ''
-    title: TX CCSDS Baseband
+    title: CCSDS Transmitter (QPSK + RS/CC)
     window_size: (1000,1000)
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 8
-    - 12.0
+    coordinate: [8, 8]
     rotation: 0
     state: enabled
+
 blocks:
-- name: constel
-  id: variable_constellation
-  parameters:
-    comment: ''
-    const_points: digital.psk_2()[0]
-    dims: '1'
-    normalization: digital.constellation.AMPLITUDE_NORMALIZATION
-    npwr: '1.0'
-    precision: '8'
-    rot_sym: '4'
-    soft_dec_lut: '''auto'''
-    sym_map: digital.psk_2()[1]
-    type: calcdist
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate:
-    - 8
-    - 152.0
-    rotation: 0
-    state: disabled
 - name: constel
   id: variable_constellation
   parameters:
@@ -73,71 +50,13 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 8
-    - 184.0
-    rotation: 0
-    state: enabled
-- name: variable_cc_decoder_def_0
-  id: variable_cc_decoder_def
-  parameters:
-    comment: 'I=1; 2072
-
-      I=5; 10232'
-    dim1: '1'
-    dim2: '1'
-    framebits: '16352'
-    k: '7'
-    mode: fec.CC_STREAMING
-    ndim: '0'
-    padding: 'False'
-    polys: '[79,-109]'
-    rate: '2'
-    state_end: '-1'
-    state_start: '0'
-    value: '"ok"'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate:
-    - 432
-    - 16.0
-    rotation: 0
-    state: enabled
-- name: variable_cc_decoder_def_1
-  id: variable_cc_decoder_def
-  parameters:
-    comment: 'I=1; 2072
-
-      I=5; 10232'
-    dim1: '1'
-    dim2: '1'
-    framebits: '16352'
-    k: '7'
-    mode: fec.CC_STREAMING
-    ndim: '0'
-    padding: 'False'
-    polys: '[79,-109]'
-    rate: '2'
-    state_end: '-1'
-    state_start: '0'
-    value: '"ok"'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate:
-    - 648
-    - 16.0
+    coordinate: [8, 144.0]
     rotation: 0
     state: enabled
 - name: variable_cc_encoder_def_0
   id: variable_cc_encoder_def
   parameters:
-    comment: 'I=1; 2072
-
-      I=5; 10232'
+    comment: ''
     dim1: '1'
     dim2: '1'
     framebits: '16352'
@@ -152,9 +71,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 864
-    - 16.0
+    coordinate: [304, 16.0]
     rotation: 0
     state: enabled
 - name: blocks_pack_k_bits_bb_0
@@ -170,10 +87,28 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 536
-    - 628.0
+    coordinate: [496, 772.0]
     rotation: 180
+    state: enabled
+- name: blocks_repack_bits_bb_0
+  id: blocks_repack_bits_bb
+  parameters:
+    affinity: ''
+    alias: ''
+    align_output: 'False'
+    comment: ''
+    endianness: gr.GR_MSB_FIRST
+    k: '8'
+    l: '2'
+    len_tag_key: '""'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [488, 948.0]
+    rotation: 0
     state: enabled
 - name: blocks_stream_mux_0
   id: blocks_stream_mux
@@ -193,9 +128,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 960
-    - 628.0
+    coordinate: [984, 772.0]
     rotation: 180
     state: enabled
 - name: blocks_stream_to_tagged_stream_0_0_0
@@ -216,9 +149,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 536
-    - 484.0
+    coordinate: [496, 516.0]
     rotation: 0
     state: enabled
 - name: blocks_stream_to_tagged_stream_0_0_1
@@ -239,9 +170,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 1376
-    - 636.0
+    coordinate: [1464, 780.0]
     rotation: 180
     state: enabled
 - name: blocks_stream_to_vector_2_0
@@ -261,9 +190,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 800
-    - 504.0
+    coordinate: [760, 536.0]
     rotation: 0
     state: enabled
 - name: blocks_unpack_k_bits_bb_0_0_0_0_0
@@ -279,9 +206,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 1584
-    - 492.0
+    coordinate: [1544, 524.0]
     rotation: 0
     state: true
 - name: blocks_vector_to_stream_0_1
@@ -301,9 +226,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 1384
-    - 504.0
+    coordinate: [1344, 536.0]
     rotation: 0
     state: enabled
 - name: chess_ccsds_scrambler_tx_0
@@ -318,9 +241,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 1160
-    - 656.0
+    coordinate: [1216, 800.0]
     rotation: 180
     state: enabled
 - name: chess_encode_rs_1
@@ -333,16 +254,14 @@ blocks:
       I=5; 1115'
     dual_basis: 'True'
     frame_size: '1784'
-    interleave: '8'
+    interleave: interleave
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 1008
-    - 472.0
+    coordinate: [968, 504.0]
     rotation: 0
     state: enabled
 - name: digital_chunks_to_symbols_xx_0
@@ -362,9 +281,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 752
-    - 796.0
+    coordinate: [808, 964.0]
     rotation: 0
     state: enabled
 - name: fec_extended_encoder_0
@@ -382,137 +299,176 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 696
-    - 608.0
+    coordinate: [688, 752.0]
     rotation: 180
     state: enabled
-- name: import_0
-  id: import
+- name: interleave
+  id: parameter
   parameters:
     alias: ''
     comment: ''
-    imports: import math
+    hide: none
+    label: Interleave
+    short_id: ''
+    type: ''
+    value: '8'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 312
-    - 12.0
-    rotation: 0
-    state: enabled
-- name: pad_source_0
-  id: pad_source
-  parameters:
-    label: in
-    num_streams: '1'
-    type: byte
-    vlen: '1'
-    optional: 'False'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate:
-    - 100
-    - 200
+    coordinate: [720, 152.0]
     rotation: 0
     state: enabled
 - name: pad_sink_0
   id: pad_sink
   parameters:
-    label: out
+    affinity: ''
+    alias: ''
+    comment: ''
+    label: tx_signal
     num_streams: '1'
+    optional: 'False'
     type: complex
     vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1376, 1204.0]
+    rotation: 0
+    state: enabled
+- name: pad_source_0
+  id: pad_source
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    label: Source
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_streams: '1'
     optional: 'False'
+    type: byte
+    vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 800
-    - 200
+    coordinate: [304, 348.0]
     rotation: 0
     state: enabled
-- name: I
+- name: pad_source_0_0
+  id: pad_source
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    label: ASM
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_streams: '1'
+    optional: 'False'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1216, 716.0]
+    rotation: 180
+    state: enabled
+- name: rolloff
   id: parameter
   parameters:
-    label: I
-    type: int
-    value: '8'
+    alias: ''
+    comment: ''
     hide: none
+    label: Rolloff Parameter
+    short_id: ''
+    type: eng_float
+    value: '0.5'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 100
-    - 50
+    coordinate: [528, 12.0]
     rotation: 0
     state: enabled
-- name: packet_len
+- name: root_raised_cosine_filter_0_0_0
+  id: root_raised_cosine_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha: rolloff
+    comment: ''
+    decim: '1'
+    gain: sps
+    interp: '2'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    ntaps: '32'
+    samp_rate: samp_rate
+    sym_rate: samp_rate/sps
+    type: interp_fir_filter_ccf
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1096, 920.0]
+    rotation: 0
+    state: enabled
+- name: samp_rate
   id: parameter
   parameters:
-    label: packet_len
-    type: int
-    value: '16320'
+    alias: ''
+    comment: ''
     hide: none
+    label: Sampling Rate
+    short_id: ''
+    type: ''
+    value: '25000000'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate:
-    - 100
-    - 50
+    coordinate: [704, 16.0]
     rotation: 0
     state: enabled
+- name: sps
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Simbols per Sample
+    short_id: ''
+    type: ''
+    value: '2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [528, 152.0]
+    rotation: 0
+    state: enabled
+
 connections:
-- - blocks_stream_mux_0
-  - '0'
-  - fec_extended_encoder_0
-  - '0'
-- - blocks_stream_to_tagged_stream_0_0_0
-  - '0'
-  - blocks_stream_to_vector_2_0
-  - '0'
-- - blocks_stream_to_tagged_stream_0_0_1
-  - '0'
-  - chess_ccsds_scrambler_tx_0
-  - '0'
-- - blocks_stream_to_vector_2_0
-  - '0'
-  - chess_encode_rs_1
-  - '0'
-- - blocks_unpack_k_bits_bb_0_0_0_0_0
-  - '0'
-  - blocks_stream_to_tagged_stream_0_0_1
-  - '0'
-- - blocks_vector_to_stream_0_1
-  - '0'
-  - blocks_unpack_k_bits_bb_0_0_0_0_0
-  - '0'
-- - chess_ccsds_scrambler_tx_0
-  - '0'
-  - blocks_stream_mux_0
-  - '1'
-- - chess_encode_rs_1
-  - '0'
-  - blocks_vector_to_stream_0_1
-  - '0'
-- - fec_extended_encoder_0
-  - '0'
-  - blocks_pack_k_bits_bb_0
-  - '0'
-- - pad_source_0
-  - '0'
-  - blocks_stream_to_tagged_stream_0_0_0
-  - '0'
-- - digital_chunks_to_symbols_xx_0
-  - '0'
-  - pad_sink_0
-  - '0'
+- [blocks_pack_k_bits_bb_0, '0', blocks_repack_bits_bb_0, '0']
+- [blocks_repack_bits_bb_0, '0', digital_chunks_to_symbols_xx_0, '0']
+- [blocks_stream_mux_0, '0', fec_extended_encoder_0, '0']
+- [blocks_stream_to_tagged_stream_0_0_0, '0', blocks_stream_to_vector_2_0, '0']
+- [blocks_stream_to_tagged_stream_0_0_1, '0', chess_ccsds_scrambler_tx_0, '0']
+- [blocks_stream_to_vector_2_0, '0', chess_encode_rs_1, '0']
+- [blocks_unpack_k_bits_bb_0_0_0_0_0, '0', blocks_stream_to_tagged_stream_0_0_1, '0']
+- [blocks_vector_to_stream_0_1, '0', blocks_unpack_k_bits_bb_0_0_0_0_0, '0']
+- [chess_ccsds_scrambler_tx_0, '0', blocks_stream_mux_0, '1']
+- [chess_encode_rs_1, '0', blocks_vector_to_stream_0_1, '0']
+- [digital_chunks_to_symbols_xx_0, '0', root_raised_cosine_filter_0_0_0, '0']
+- [fec_extended_encoder_0, '0', blocks_pack_k_bits_bb_0, '0']
+- [pad_source_0, '0', blocks_stream_to_tagged_stream_0_0_0, '0']
+- [pad_source_0_0, '0', blocks_stream_mux_0, '0']
+- [root_raised_cosine_filter_0_0_0, '0', pad_sink_0, '0']
+
 metadata:
   file_format: 1
   grc_version: 3.10.12.0
