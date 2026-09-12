@@ -9,7 +9,7 @@ options:
     description: ''
     gen_cmake: 'On'
     gen_linking: dynamic
-    generate_options: no_gui
+    generate_options: qt_gui
     hier_block_src_path: '.:'
     id: RS_CC_TX_RCV
     max_nouts: '0'
@@ -49,7 +49,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '3.50'
+    value: '3.5'
   states:
     bus_sink: false
     bus_source: false
@@ -142,7 +142,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [840, 724.0]
+    coordinate: [624, 692.0]
     rotation: 180
     state: enabled
 - name: blocks_file_source_0_0_0_0_0_0
@@ -164,7 +164,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [312, 492.0]
+    coordinate: [264, 356.0]
     rotation: 0
     state: enabled
 - name: blocks_null_sink_0
@@ -175,7 +175,7 @@ blocks:
     bus_structure_sink: '[[0,],]'
     comment: ''
     num_inputs: '1'
-    type: byte
+    type: complex
     vlen: '1'
   states:
     bus_sink: false
@@ -202,7 +202,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1408, 540.0]
+    coordinate: [1104, 540.0]
     rotation: 0
     state: enabled
 - name: ccsds_concatenated_rx_0
@@ -212,6 +212,7 @@ blocks:
     alias: ''
     comment: ''
     interleave: '8'
+    loop_bw: '0.002'
     max_missed: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -223,7 +224,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [2128, 496.0]
+    coordinate: [2128, 472.0]
     rotation: 0
     state: enabled
 - name: ccsds_concatenated_tx_0
@@ -242,7 +243,29 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [888, 516.0]
+    coordinate: [632, 516.0]
+    rotation: 0
+    state: enabled
+- name: chess_coarse_doppler_sync_0
+  id: chess_coarse_doppler_sync
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha: '0.35'
+    comment: ''
+    correct_freq: 'True'
+    fft_len: '4096'
+    m_order: '4'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    threshold_db: '1.5'
+    update_interval: '20000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1736, 488.0]
     rotation: 0
     state: enabled
 - name: chess_doppler_channel_0
@@ -266,7 +289,28 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1624, 464.0]
+    coordinate: [1608, 736.0]
+    rotation: 0
+    state: disabled
+- name: chess_downlink_channel_0
+  id: chess_downlink_channel
+  parameters:
+    affinity: ''
+    altitude: '475'
+    comment: ''
+    f_carrier: 8.4e9
+    inclination: '53.0'
+    max_el: '90.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    noise_voltage: math.sqrt(sps / (10**(ebn0_db / 10.0) * (223.0/259.0)))
+    samp_rate: samp_rate
+    t_offset: '-150.0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1296, 488.0]
     rotation: 0
     state: enabled
 - name: import_0
@@ -282,15 +326,109 @@ blocks:
     coordinate: [312, 12.0]
     rotation: 0
     state: enabled
+- name: qtgui_const_sink_x_0
+  id: qtgui_const_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    grid: 'False'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '0'
+    marker10: '0'
+    marker2: '0'
+    marker3: '0'
+    marker4: '0'
+    marker5: '0'
+    marker6: '0'
+    marker7: '0'
+    marker8: '0'
+    marker9: '0'
+    name: '""'
+    nconnections: '1'
+    size: '1024'
+    style1: '0'
+    style10: '0'
+    style2: '0'
+    style3: '0'
+    style4: '0'
+    style5: '0'
+    style6: '0'
+    style7: '0'
+    style8: '0'
+    style9: '0'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: complex
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    xmax: '2'
+    xmin: '-2'
+    ymax: '2'
+    ymin: '-2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [2464, 732.0]
+    rotation: 0
+    state: enabled
 
 connections:
 - [blocks_file_source_0_0_0_0_0, '0', ccsds_concatenated_tx_0, '1']
 - [blocks_file_source_0_0_0_0_0_0, '0', ccsds_concatenated_tx_0, '0']
-- [blocks_throttle2_0, '0', chess_doppler_channel_0, '0']
+- [blocks_throttle2_0, '0', chess_downlink_channel_0, '0']
 - [ccsds_concatenated_rx_0, '0', blocks_file_sink_0, '0']
-- [ccsds_concatenated_rx_0, '0', blocks_null_sink_0, '0']
+- [ccsds_concatenated_rx_0, '1', blocks_null_sink_0, '0']
+- [ccsds_concatenated_rx_0, '1', qtgui_const_sink_x_0, '0']
 - [ccsds_concatenated_tx_0, '0', blocks_throttle2_0, '0']
-- [chess_doppler_channel_0, '0', ccsds_concatenated_rx_0, '0']
+- [chess_coarse_doppler_sync_0, '0', ccsds_concatenated_rx_0, '0']
+- [chess_downlink_channel_0, '0', chess_coarse_doppler_sync_0, '0']
 
 metadata:
   file_format: 1
