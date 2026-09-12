@@ -49,7 +49,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '3.5'
+    value: '7.5'
   states:
     bus_sink: false
     bus_source: false
@@ -251,16 +251,16 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    alpha: '0.35'
+    alpha: '0.7'
     comment: ''
     correct_freq: 'True'
-    fft_len: '4096'
+    fft_len: '8192'
     m_order: '4'
     maxoutbuf: '0'
     minoutbuf: '0'
     samp_rate: samp_rate
-    threshold_db: '1.5'
-    update_interval: '20000'
+    threshold_db: '1.0'
+    update_interval: '8192'
   states:
     bus_sink: false
     bus_source: false
@@ -296,6 +296,7 @@ blocks:
   id: chess_downlink_channel
   parameters:
     affinity: ''
+    alias: ''
     altitude: '475'
     comment: ''
     f_carrier: 8.4e9
@@ -417,7 +418,7 @@ blocks:
     bus_structure: null
     coordinate: [2464, 732.0]
     rotation: 0
-    state: enabled
+    state: disabled
 
 connections:
 - [blocks_file_source_0_0_0_0_0, '0', ccsds_concatenated_tx_0, '1']
