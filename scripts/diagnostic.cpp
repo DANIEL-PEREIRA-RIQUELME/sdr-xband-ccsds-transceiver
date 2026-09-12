@@ -197,9 +197,9 @@ std::string find_project_root() {
 int main(int argc, char* argv[]) {
     std::string root = find_project_root();
     
-    std::string TX_FILE = fs::exists(root + "data/test_signal_0.06Ms_CCSDS_I_8") 
-                        ? (root + "data/test_signal_0.06Ms_CCSDS_I_8")
-                        : (root + "files/test_signal_0.06Ms_CCSDS_I_8");
+    std::string TX_FILE = fs::exists(root + "data/test_signal_1Ms_CCSDS_I_8") 
+                        ? (root + "data/test_signal_1Ms_CCSDS_I_8")
+                        : (root + "files/test_signal_1Ms_CCSDS_I_8");
                         
     std::string SAMPLES_DIR = fs::exists(root + "output/samples/test/")
                             ? (root + "output/samples/test/")

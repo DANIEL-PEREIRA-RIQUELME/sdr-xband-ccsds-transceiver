@@ -76,14 +76,15 @@ class RS_CC_TX_RCV(gr.top_block):
         self.samp_rate = samp_rate = 25000000
         self.rolloff = rolloff = 0.5
         self.f_tx = f_tx = 8.4e9
-        self.ebn0_db = ebn0_db = 3.50
+        self.ebn0_db = ebn0_db = 3
         self.altitude = altitude = 475.0
 
         ##################################################
         # Blocks
         ##################################################
 
-        self.chess_doppler_channel_0 = chess.doppler_channel(samp_rate, 10.475e9, 475.0, 90.0, 53.0, 478.0, 91, 52.5, math.sqrt(sps / (10**(ebn0_db / 10.0) * (223.0/259.0))))
+        self.chess_downlink_channel_0 = chess.downlink_channel(samp_rate, 8.4e9, 475, 90.0, 53.0, math.sqrt(sps / (10**(ebn0_db / 10.0) * (223.0/259.0))), -150.0)
+        self.chess_coarse_doppler_sync_0 = chess.coarse_doppler_sync(samp_rate, 16384, 131072, 4, True, 0.7, 1.0, 8)
         self.ccsds_concatenated_tx_0 = ccsds_concatenated_tx(
             interleave=8,
             rolloff=0.5,
@@ -92,6 +93,7 @@ class RS_CC_TX_RCV(gr.top_block):
         )
         self.ccsds_concatenated_rx_0 = ccsds_concatenated_rx(
             interleave=8,
+            loop_bw=0.002,
             max_missed=1,
             rolloff=0.5,
             samp_rate=25000000,
@@ -99,7 +101,7 @@ class RS_CC_TX_RCV(gr.top_block):
             sync_threshold=0,
         )
         self.blocks_throttle2_0 = blocks.throttle( gr.sizeof_gr_complex*1, samp_rate, True, 0 if "auto" == "auto" else max( int(float(0.1) * samp_rate) if "auto" == "time" else int(0.1), 1) )
-        self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_char*1)
+        self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_gr_complex*1)
         self.blocks_file_source_0_0_0_0_0_0 = blocks.file_source(gr.sizeof_char*1, 'data/test_signal_0.06Ms_CCSDS_I_8', False, 0, 0)
         self.blocks_file_source_0_0_0_0_0_0.set_begin_tag(pmt.PMT_NIL)
         self.blocks_file_source_0_0_0_0_0_0.set_processor_affinity([1])
@@ -115,11 +117,12 @@ class RS_CC_TX_RCV(gr.top_block):
         ##################################################
         self.connect((self.blocks_file_source_0_0_0_0_0, 0), (self.ccsds_concatenated_tx_0, 1))
         self.connect((self.blocks_file_source_0_0_0_0_0_0, 0), (self.ccsds_concatenated_tx_0, 0))
-        self.connect((self.blocks_throttle2_0, 0), (self.chess_doppler_channel_0, 0))
+        self.connect((self.blocks_throttle2_0, 0), (self.chess_downlink_channel_0, 0))
         self.connect((self.ccsds_concatenated_rx_0, 0), (self.blocks_file_sink_0, 0))
-        self.connect((self.ccsds_concatenated_rx_0, 0), (self.blocks_null_sink_0, 0))
+        self.connect((self.ccsds_concatenated_rx_0, 1), (self.blocks_null_sink_0, 0))
         self.connect((self.ccsds_concatenated_tx_0, 0), (self.blocks_throttle2_0, 0))
-        self.connect((self.chess_doppler_channel_0, 0), (self.ccsds_concatenated_rx_0, 0))
+        self.connect((self.chess_coarse_doppler_sync_0, 0), (self.ccsds_concatenated_rx_0, 0))
+        self.connect((self.chess_downlink_channel_0, 0), (self.chess_coarse_doppler_sync_0, 0))
 
 
     def get_sps(self):

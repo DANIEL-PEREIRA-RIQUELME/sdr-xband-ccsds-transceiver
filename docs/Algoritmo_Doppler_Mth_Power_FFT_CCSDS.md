@@ -159,10 +159,10 @@ $$\Delta f_{carrier, bin} = \frac{25 \cdot 10^6}{4 \times 4096} = 1525.88\text{ 
 
 Dejar un error residual de hasta $\pm 762\text{ Hz}$ puede resultar excesivo para un lazo de Costas de ancho de banda estrecho. Para alcanzar una precisión submúltiplo del hercio sin elevar $N_{FFT}$ a valores astronómicos, aplicamos un **interpolador cuadrático / parabólico de 3 puntos** centrado en $k_{max}$ (Rife & Boorstyn, 1974; Jacobsen & Kootsookos, 2007).
 
-Definiendo las amplitudes espectrales adyacentes:
-$$\alpha = |Z[k_{max}-1]|$$
-$$\beta = |Z[k_{max}]|$$
-$$\gamma = |Z[k_{max}+1]|$$
+Definiendo las potencias espectrales adyacentes (implementación Rife & Boorstyn corregida sobre potencia $P[k] = |Z[k]|^2$):
+$$\alpha = P[k_{max}-1]$$
+$$\beta = P[k_{max}]$$
+$$\gamma = P[k_{max}+1]$$
 
 El desplazamiento fraccionario sub-bin $\delta \in [-0.5, +0.5]$ se calcula de forma cerrada mediante:
 $$\delta = \frac{1}{2} \cdot \frac{\alpha - \gamma}{\alpha - 2\beta + \gamma}$$
@@ -219,6 +219,8 @@ flowchart TD
 
 ### Dinámica Operacional y Máquina de Estados:
 1. **Fase de Adquisición Inicial:**
+   - La FFT calcula la potencia espectral y excluye un margen protector de $\pm 8\text{ bins}$ alrededor del pico para estimar fielmente el suelo de ruido.
+   - Si la relación pico-ruido supera el umbral parametrizable `threshold_db` (ej. $1.0\text{ dB}$), el pico se considera válido.
    - La señal llega con un Doppler arbitrario de hasta $\pm 250\text{ kHz}$.
    - El estimador de 4ª potencia computa una FFT sobre un bloque de $4096$ muestras (duración temporal de captura: $1.31\text{ ms}$).
    - En $< 2\text{ ms}$, el algoritmo determina $\widehat{\Delta f_D}$ y sintoniza el rotador `blocks.rotator_cc`.

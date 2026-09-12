@@ -25,6 +25,14 @@ scripts/diagnostic
 *.o
 *.so
 
+# Working directory symlinks for GRC / scripts
+flowgraphs/data
+flowgraphs/output
+scripts/data
+scripts/output
+scripts/results
+scripts/samples
+
 # LaTeX auxiliary build files
 docs/latex/*.aux
 docs/latex/*.bbl
@@ -62,3 +70,10 @@ docs/Page 1.pdf
 *.swo
 .DS_Store
 Thumbs.db
+scripts/temp_*.py
+scripts/test_*.py
+scripts/run_*.py
+scripts/run_1Ms.sh
+scripts/perf_metrics*.json
+flowgraphs/*.py
+!flowgraphs/RS_CC_TX_RCV.py

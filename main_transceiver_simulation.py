@@ -61,14 +61,17 @@ def run_transceiver(ebn0_db: float = 3.50):
     print(f"========================================================")
 
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"{FLOWGRAPHS_DIR}:{os.path.expanduser('~/.local/state/gnuradio')}:{env.get('PYTHONPATH', '')}"
+    user_pkg = os.path.expanduser('~/.local/lib/python3.12/dist-packages')
+    user_lib = os.path.expanduser('~/.local/lib/x86_64-linux-gnu')
+    env["PYTHONPATH"] = f"{user_pkg}:{FLOWGRAPHS_DIR}:{os.path.expanduser('~/.local/state/gnuradio')}:{env.get('PYTHONPATH', '')}"
+    env["LD_LIBRARY_PATH"] = f"{user_lib}:{env.get('LD_LIBRARY_PATH', '')}"
 
     # Use system python to ensure access to system OOT modules (gr-chess, satellites)
     py_exec = SYSTEM_PYTHON if Path(SYSTEM_PYTHON).exists() else sys.executable
     cmd = [py_exec, str(flowgraph_script)]
 
     print(f"[*] Executing flowgraph via: {py_exec} {flowgraph_script.name}")
-    ret = subprocess.run(cmd, cwd=str(PROJECT_ROOT))
+    ret = subprocess.run(cmd, cwd=str(PROJECT_ROOT), env=env)
     if ret.returncode != 0:
         print(f"[-] Transceiver execution exited with code {ret.returncode}")
     else:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 #
@@ -7,6 +7,12 @@
 # GNU Radio Python Flow Graph
 # Title: Not titled yet
 # GNU Radio version: 3.10.12.0
+
+import os
+import sys
+user_pkg = os.path.expanduser('~/.local/lib/python3.12/dist-packages')
+if user_pkg not in sys.path:
+    sys.path.insert(0, user_pkg)
 
 from gnuradio import analog
 from gnuradio import blocks

@@ -231,24 +231,24 @@ blocks:
     coordinate: [408, 1064.0]
     rotation: 0
     state: enabled
-- name: chess_dual_branch_flywheel_sync_0
-  id: chess_dual_branch_flywheel_sync
+- name: chess_fast_sync_0
+  id: chess_fast_sync
   parameters:
     affinity: ''
     alias: ''
     asm0: '"1ACFFC1D"'
     asm1: '"E53003E2"'
     comment: ''
-    max_misses: max_missed
+    max_misses: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
     payload_len: '16320'
-    threshold: sync_threshold
+    threshold: '0'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [544, 708.0]
+    coordinate: [552, 692.0]
     rotation: 180
     state: enabled
 - name: digital_constellation_soft_decoder_cf_0_0
@@ -295,7 +295,7 @@ blocks:
     minoutbuf: '0'
     order: '4'
     use_snr: 'False'
-    w: '0.002'
+    w: loop_bw
   states:
     bus_sink: false
     bus_source: false
@@ -383,6 +383,23 @@ blocks:
     coordinate: [1040, 168.0]
     rotation: 0
     state: enabled
+- name: loop_bw
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Loop Bandwidth
+    short_id: ''
+    type: ''
+    value: '0.002'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1352, 24.0]
+    rotation: 0
+    state: enabled
 - name: max_missed
   id: parameter
   parameters:
@@ -416,6 +433,24 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [1936, 1212.0]
+    rotation: 0
+    state: enabled
+- name: pad_sink_0_0
+  id: pad_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    label: out_costas
+    num_streams: '1'
+    optional: 'False'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1928, 260.0]
     rotation: 0
     state: enabled
 - name: pad_source_0
@@ -564,14 +599,15 @@ connections:
   '0']
 - [blocks_pack_k_bits_bb_0_0, '0', blocks_stream_to_tagged_stream_0, '0']
 - [blocks_stream_to_tagged_stream_0, '0', pdu_tagged_stream_to_pdu_0, '0']
-- [blocks_tag_gate_0, '0', chess_dual_branch_flywheel_sync_0, '0']
-- [blocks_tag_gate_0_0, '0', chess_dual_branch_flywheel_sync_0, '1']
+- [blocks_tag_gate_0, '0', chess_fast_sync_0, '0']
+- [blocks_tag_gate_0_0, '0', chess_fast_sync_0, '1']
 - [chess_ccsds_descrambler_rx_1, '0', blocks_pack_k_bits_bb_0_0, '0']
-- [chess_dual_branch_flywheel_sync_0, '0', chess_ccsds_descrambler_rx_1, '0']
+- [chess_fast_sync_0, '0', chess_ccsds_descrambler_rx_1, '0']
 - [digital_constellation_soft_decoder_cf_0_0, '0', fec_extended_decoder_0, '0']
 - [digital_constellation_soft_decoder_cf_0_0_1, '0', fec_extended_decoder_0_1, '0']
 - [digital_costas_loop_cc_0_0, '0', blocks_multiply_const_vxx_1, '0']
 - [digital_costas_loop_cc_0_0, '0', digital_constellation_soft_decoder_cf_0_0, '0']
+- [digital_costas_loop_cc_0_0, '0', pad_sink_0_0, '0']
 - [digital_pfb_clock_sync_xxx_0_0, '0', digital_costas_loop_cc_0_0, '0']
 - [fec_extended_decoder_0, '0', blocks_tag_gate_0, '0']
 - [fec_extended_decoder_0_1, '0', blocks_tag_gate_0_0, '0']
