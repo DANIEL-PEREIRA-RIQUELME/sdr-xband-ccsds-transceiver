@@ -49,7 +49,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '7.5'
+    value: '5'
   states:
     bus_sink: false
     bus_source: false
@@ -212,7 +212,7 @@ blocks:
     alias: ''
     comment: ''
     interleave: '8'
-    loop_bw: '0.002'
+    loop_bw: '0.004'
     max_missed: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -251,16 +251,17 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    alpha: '0.7'
-    comment: ''
+    alpha: '0.3'
+    comment: 'decim=8, fft_len=16384 → bin=190 Hz → residual ±95 Hz < Costas capture range'
     correct_freq: 'True'
-    fft_len: '8192'
+    decim: '8'
+    fft_len: '16384'
     m_order: '4'
     maxoutbuf: '0'
     minoutbuf: '0'
     samp_rate: samp_rate
     threshold_db: '1.0'
-    update_interval: '8192'
+    update_interval: '131072'
   states:
     bus_sink: false
     bus_source: false
@@ -418,7 +419,7 @@ blocks:
     bus_structure: null
     coordinate: [2464, 732.0]
     rotation: 0
-    state: disabled
+    state: enabled
 
 connections:
 - [blocks_file_source_0_0_0_0_0, '0', ccsds_concatenated_tx_0, '1']
