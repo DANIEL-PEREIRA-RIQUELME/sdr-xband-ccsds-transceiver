@@ -12,6 +12,10 @@ output/results/test/*
 *.dat
 output_2m_*
 output_SNR_*
+*result*.json
+*results*.json
+ber_vs_ebn0.png
+temp_*.py
 
 # Large test vectors (>50 MB, exceeds GitHub limits)
 data/test_signal_0.06Ms_CCSDS_I_8
