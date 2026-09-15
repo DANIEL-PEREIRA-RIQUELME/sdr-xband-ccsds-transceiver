@@ -1,0 +1,13 @@
+{
+    "ebn0_db": 4.0,
+    "costas_bw": 0.001,
+    "taps_expr": "firdes.root_raised_cosine(32,64,1.0,0.5,1704)",
+    "signal_file": "data/test_signal_0.06Ms_CCSDS_I_8",
+    "total_frames_evaluated": 60000,
+    "frames_rx_valid_crc": 59982,
+    "frames_lost": 18,
+    "frames_rx_crc_fail": 0,
+    "fer": 3.0e-4,
+    "sync_ber": 0.0,
+    "system_ber": 1.5e-4
+}

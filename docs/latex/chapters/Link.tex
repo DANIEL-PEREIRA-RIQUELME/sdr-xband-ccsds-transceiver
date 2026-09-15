@@ -46,6 +46,7 @@ Furthermore, the budget deliberately assumes a conservative $2$ dB implementatio
 
 \section{Final Results and Real-Time Execution}
 
+\todo[inline]{Hay que cambiar esto y ajustarlo a la realidad. Cambiar la figura 5.2 por la nueva figura con los nuevos bloques. Además, hayq ue cambiar la figura 5.3.}
 A central objective of this project was to verify whether standard C++ based DSP blocks in GNU Radio could sustain the mission's high-throughput requirements without relying on dedicated hardware acceleration, such as FPGAs. The transition from application-specific integrated circuits to algorithms running on Commercial Off-The-Shelf (COTS) servers introduces heavy computational constraints.
 
 To test the system's operational limits, the complete receiver pipeline was deployed on a compact base station server (\href{https://www.galaxus.ch/fr/s1/product/geekom-a8-max-1000-go-32-go-radeon-780m-pc-58778517}{Geekom A8 Max}, featuring an AMD Radeon 780M architecture and 32 GB of RAM). Under these real-world execution conditions, the software receiver successfully sustained a stable, real-time decoding throughput of $28$ Mbps without encountering buffer overflows or frame drops. This result comfortably exceeds the nominal target of $25$ Mbps specified in \Cref{tab:xband_downlink_budget}, conclusively demonstrating that a purely software-defined architecture is fully viable for this \textsf{CHESS} mission scenario.

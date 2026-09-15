@@ -93,7 +93,7 @@ class RS_CC_TX_RCV(gr.top_block):
         )
         self.ccsds_concatenated_rx_0 = ccsds_concatenated_rx(
             interleave=8,
-            loop_bw=0.002,
+            loop_bw=0.001,
             max_missed=1,
             rolloff=0.5,
             samp_rate=25000000,

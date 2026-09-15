@@ -212,7 +212,7 @@ blocks:
     alias: ''
     comment: ''
     interleave: '8'
-    loop_bw: '0.002'
+    loop_bw: '0.001'
     max_missed: '1'
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -270,30 +270,6 @@ blocks:
     coordinate: [1736, 476.0]
     rotation: 0
     state: enabled
-- name: chess_doppler_channel_0
-  id: chess_doppler_channel
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    f_tx: 10.475e9
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    noise_voltage: math.sqrt(sps / (10**(ebn0_db / 10.0) * (223.0/259.0)))
-    rx_alt: '478.0'
-    rx_inc: '52.5'
-    rx_max_el: '91'
-    samp_rate: samp_rate
-    tx_alt: '475.0'
-    tx_inc: '53.0'
-    tx_max_el: '90.0'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1608, 736.0]
-    rotation: 0
-    state: disabled
 - name: chess_downlink_channel_0
   id: chess_downlink_channel
   parameters:

@@ -1,5 +1,9 @@
 \chapter{Frame Synchronization} \label{ch:Frame_sync}
 
+\todo[inline]{Este algoritmo se tiene que cambiar por completo. Hay que cambiar por completo este capítulo. Quiero seguir la estructura y tal.
+hay que cambiar la gráfica del BER para poner la curva nueva en vez de la azul. De este capítulo, el phase ambiguity
+se cambia: mira el algoritmo implementado en el código y detalla en el informe como se hace. Tampoco escribass demasiado, ajústate y hazte una idea de lo qeu quiero con lo que ya hay
+. Hay que cambiar la figura 4.4. Probblemente haya que cambiar el punto 4.2 y 4.3}
 Frame synchronization is a well-known problem in the literature. We receive several frames with a defined length and a preamble (ASM) designed to locate them. To search for the preamble within the received samples and thus locate each frame, there are two techniques mentioned in the standard \autocite{CCSDS_130_1_G_3}:
 
 First, an intuitive approach would be to search for the decoded preamble using the $\mathtt{Viterbi}$ algorithm. Since the ASM is a pseudorandom code specified in \autocite{CCSDS_131_0_B_5}, it could be correlated\footnote{Although there are other methods to find a known bit string, the correlation method has been chosen and is widely used in the literature.} with the preamble until it is found. However, we face the problem of the phase ambiguity of the Costas loop; the constellation after the block can appear rotated. 
