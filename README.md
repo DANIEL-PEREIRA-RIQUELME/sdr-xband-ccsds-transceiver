@@ -118,7 +118,7 @@ flowchart LR
 Costas carrier tracking loops operating on QPSK modulations inherently suffer from **$\pi/2$ phase ambiguity** and occasional **cycle-slipping** induced by deep channel fading or high Doppler drift rates. 
 
 <p align="center">
-  <img src="docs/figures/dual_branch_flywheel_sync.png" alt="Dual-Branch Flywheel Synchronizer Flowgraph" width="100%">
+  <img src="docs/figures/page_1_dual_branch_sync.png" alt="Dual-Branch Flywheel Synchronizer Flowgraph (docs/Page 1.pdf)" width="100%">
 </p>
 
 To eliminate cycle-slipping penalties and achieve zero-latency re-acquisition, the receiver implements a concurrent dual-branch architecture directly following the Costas carrier loop:
