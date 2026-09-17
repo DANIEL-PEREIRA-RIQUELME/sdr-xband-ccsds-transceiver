@@ -41,44 +41,75 @@ Developed for the **CHESS CubeSat mission (Pathfinder 0)** at the **EPFL Spacecr
 ```mermaid
 graph TD
     subgraph Spacecraft_Transmitter ["1. Spacecraft Transmitter (Hier Block: ccsds_concatenated_tx)"]
-        TF[CCSDS Transfer Frame<br/>1,784 Bytes] --> RS_ENC[Outer Reed-Solomon<br/>RS 255, 223 Encoder]
-        RS_ENC --> INTL[Convolutional Interleaver<br/>Depth I = 8, 2,040 Bytes]
-        INTL --> SCRAM[CCSDS Pseudo-Randomizer<br/>LFSR h(x) Scrambler]
-        SCRAM --> MUX[ASM Mux<br/>32-bit Sync Word 0x1ACFFC1D]
-        MUX --> CC_ENC[Inner Convolutional Encoder<br/>Rate 1/2, K=7, 171/133]
-        CC_ENC --> MAP[Gray QPSK Mapper<br/>16,352 Symbols / CADU]
-        MAP --> RRC_TX[Root-Raised Cosine Filter<br/>alpha = 0.5, sps = 2]
+        TF["CCSDS Transfer Frame<br/>1,784 Bytes"] --> RS_ENC["Outer Reed-Solomon<br/>RS(255, 223) Encoder"]
+        RS_ENC --> INTL["Convolutional Interleaver<br/>Depth I = 8, 2,040 Bytes"]
+        INTL --> SCRAM["CCSDS Pseudo-Randomizer<br/>LFSR h(x) Scrambler"]
+        SCRAM --> MUX["ASM Mux<br/>32-bit Sync Word 0x1ACFFC1D"]
+        MUX --> CC_ENC["Inner Convolutional Encoder<br/>Rate 1/2, K=7, (171, 133)"]
+        CC_ENC --> MAP["Gray QPSK Mapper<br/>16,352 Symbols / CADU"]
+        MAP --> RRC_TX["Root-Raised Cosine Filter<br/>alpha = 0.5, sps = 2"]
     end
 
     subgraph Channel_Emulation ["2. Dynamic LEO Channel Simulation"]
-        RRC_TX --> DOP_SIM[LEO Orbital Doppler Model<br/>Altitude 475 km, 8.4 GHz]
-        DOP_SIM --> AWGN_SIM[Calibrated AWGN Noise Engine<br/>Eb/N0 Parameterized]
+        RRC_TX --> DOP_SIM["LEO Orbital Doppler Model<br/>Altitude 475 km, 8.4 GHz"]
+        DOP_SIM --> AWGN_SIM["Calibrated AWGN Noise Engine<br/>Eb/N0 Parameterized"]
     end
 
     subgraph Ground_Station_Receiver ["3. Ground Station Receiver (Hier Block: ccsds_concatenated_rx)"]
-        AWGN_SIM --> AGC_RX[Automatic Gain Control<br/>Fast Attack / Slow Decay]
-        AGC_RX --> PFB_RX[Polyphase Clock Sync<br/>Symbol Timing Recovery sps=2]
-        PFB_RX --> COSTAS[Costas Carrier Recovery<br/>4th-Power Closed-Loop]
+        AWGN_SIM --> AGC_RX["Automatic Gain Control<br/>Fast Attack / Slow Decay"]
+        AGC_RX --> PFB_RX["Polyphase Clock Sync<br/>Symbol Timing Recovery sps=2"]
+        PFB_RX --> COSTAS["Costas Carrier Recovery<br/>4th-Power Closed-Loop"]
         
-        COSTAS --> SOFT0[Direct Soft Demap<br/>Branch 0: 0 deg]
-        COSTAS --> ROT90[Multiply by +j<br/>Branch 1: 90 deg]
-        ROT90 --> SOFT1[Rotated Soft Demap]
+        COSTAS --> SOFT0["Direct Soft Demap<br/>Branch 0: 0 deg"]
+        COSTAS --> ROT90["Multiply by +j<br/>Branch 1: 90 deg"]
+        ROT90 --> SOFT1["Rotated Soft Demap"]
         
-        SOFT0 --> VIT0[Viterbi Decoder 0<br/>Rate 1/2, K=7 Soft Decision]
-        SOFT1 --> VIT1[Viterbi Decoder 1<br/>Rate 1/2, K=7 Soft Decision]
+        SOFT0 --> VIT0["Viterbi Decoder 0<br/>Rate 1/2, K=7 Soft Decision"]
+        SOFT1 --> VIT1["Viterbi Decoder 1<br/>Rate 1/2, K=7 Soft Decision"]
         
-        VIT0 --> FLYWHEEL[Dual-Branch Flywheel Sync<br/>0x1ACFFC1D / 0xE53003E2 Lock]
+        VIT0 --> FLYWHEEL["Dual-Branch Flywheel Sync<br/>0x1ACFFC1D / 0xE53003E2 Lock"]
         VIT1 --> FLYWHEEL
         
-        FLYWHEEL --> DESCRAM[CCSDS Descrambler<br/>LFSR Derandomizer]
-        DESCRAM --> RS_DEC[Outer RS(255, 223) Decoder<br/>I = 8 Deinterleave, t=16]
-        RS_DEC --> OUT_DATA[Decoded Telemetry<br/>1,784 Bytes Transfer Frames]
+        FLYWHEEL --> DESCRAM["CCSDS Descrambler<br/>LFSR Derandomizer"]
+        DESCRAM --> RS_DEC["Outer RS(255, 223) Decoder<br/>I = 8 Deinterleave, t=16"]
+        RS_DEC --> OUT_DATA["Decoded Telemetry<br/>1,784 Bytes Transfer Frames"]
     end
 
     subgraph Verification ["4. Quality Assurance"]
-        OUT_DATA --> DIAG[C++20 Diagnostic Analyzer<br/>CRC-16, Sync Loss, FER, BER]
+        OUT_DATA --> DIAG["C++20 Diagnostic Analyzer<br/>CRC-16, Sync Loss, FER, BER"]
     end
 ```
+
+---
+
+## Autonomous Blind Doppler Estimation (4th-Power + FFT)
+
+In Low Earth Orbit (LEO) satellite communications at X-band ($f_c \approx 8.4\text{ GHz}$), spacecraft orbital motion induces dynamic Doppler frequency shifts of up to $\Delta f_D \approx \pm 250\text{ kHz}$ with high drift rates ($|\dot{f}_D| \approx 2.5\text{ kHz/s}$ at zenith), compounded by local oscillator (LO) thermal drifts ($\pm 30\text{ to }50\text{ kHz}$). Standard closed-loop carrier tracking (Costas loop) requires a narrow loop bandwidth to suppress phase noise, limiting its pull-in capture range to a few kilohertz. To operate autonomously without external orbital ephemerides (TLEs), the receiver incorporates a **Non-Data-Aided (Blind) Coarse Frequency Estimator** based on **4th-power non-linearity + FFT spectral discrimination + Jacobsen sub-bin interpolation**:
+
+```mermaid
+flowchart LR
+    IN["Baseband I/Q Input<br/>fs = 25 MSps"] --> DECIM["Decimator (D = 8)<br/>fs_dec = 3.125 MSps"]
+    DECIM --> POW4["4th-Power Non-Linearity<br/>z[n] = (r_dec[n])⁴"]
+    POW4 --> FFT["4096-pt FFT<br/>+ Hanning Window"]
+    FFT --> PEAK["Peak Search (k_max)<br/>+ Jacobsen Interpolation"]
+    PEAK -->|"Δf_D Estimate"| NCO["Complex Rotator (NCO)<br/>Coarse Carrier Wipe-Off"]
+```
+
+1. **Modulation Wipe-Off via 4th-Power Non-Linearity ($M = 4$):**
+   For Gray-coded QPSK symbols $s_k \in \{e^{j(2m_k + 1)\frac{\pi}{4}}\}$ ($m_k \in \{0, 1, 2, 3\}$), raising the discrete-time baseband signal to the 4th power completely eliminates data modulation:
+   $$(s_k)^4 = \left(e^{j (2m_k + 1) \frac{\pi}{4}}\right)^4 = e^{j (2m_k + 1)\pi} = -1 \quad \forall m_k$$
+   Regardless of telemetry data content or ASM preambles, the modulated wideband spectrum collapses into a single discrete harmonic tone at quadruple the Doppler offset:
+   $$s_4[n] = -K \cdot e^{j(2\pi (4\Delta f_D) n T_s + 4\theta_0)} \implies f_{\text{tone}} = 4 \cdot \Delta f_D$$
+
+2. **High Coherent Processing Gain via FFT ($G_{\text{FFT}}$):**
+   Non-linear multiplication generates noise cross-terms ($S_L$ quadrupling loss). To overcome this degradation, a 4096-point FFT provides substantial coherent integration gain:
+   $$G_{\text{FFT}} = 10 \log_{10}(N_{\text{FFT}}) = 10 \log_{10}(4096) \approx 36.12\text{ dB}$$
+   This lifts the $4\Delta f_D$ tone $10\text{ to }20\text{ dB}$ above the noise floor even under hostile $E_b/N_0 < 2.0\text{ dB}$ conditions.
+
+3. **Sub-Bin Parabolic Interpolation (Jacobsen Estimator):**
+   With an 8x decimated sampling rate ($f_{s,\text{dec}} = 3.125\text{ MSps}$), the raw FFT bin resolution is $\Delta f_{\text{bin}} = \frac{f_{s,\text{dec}}}{4 \cdot N_{\text{FFT}}} = \frac{3.125\text{ MHz}}{4 \times 4096} \approx 190.73\text{ Hz}$. A 3-point parabolic interpolator around the spectral peak $k_{\text{max}}$ determines the fractional bin offset $\delta \in [-0.5, +0.5]$:
+   $$\delta = \frac{1}{2} \cdot \frac{P[k_{\text{max}}-1] - P[k_{\text{max}}+1]}{P[k_{\text{max}}-1] - 2P[k_{\text{max}}] + P[k_{\text{max}}+1]}, \qquad \widehat{\Delta f_D} = \frac{(k_{\text{max}} + \delta) \cdot f_{s,\text{dec}}}{4 \cdot N_{\text{FFT}}}$$
+   The resulting estimate achieves an accuracy variance $\sigma_{\Delta f} < 15\text{ Hz}$, well within the capture bandwidth of the fine Costas loop. The estimated frequency is fed to a complex rotator (NCO) to derotate the incoming signal prior to clock recovery and Costas tracking.
 
 ---
 
@@ -87,13 +118,16 @@ graph TD
 Costas carrier tracking loops operating on QPSK modulations inherently suffer from **$\pi/2$ phase ambiguity** and occasional **cycle-slipping** induced by deep channel fading or high Doppler drift rates. 
 
 <p align="center">
-  <img src="docs/figures/dual_branch_flywheel_sync.png" alt="Dual-Branch Flywheel Synchronizer State Machine" width="90%">
+  <img src="docs/figures/dual_branch_flywheel_sync.png" alt="Dual-Branch Flywheel Synchronizer Flowgraph" width="100%">
 </p>
 
-To prevent catastrophic telemetry dropouts, the receiver runs a concurrent dual-branch architecture:
-- **In-Phase Branch ($0^\circ$):** Evaluates direct soft Viterbi decoding and searches for the nominal ASM marker (`0x1ACFFC1D`).
-- **Quadrature Branch ($+j 90^\circ$):** Evaluates phase-rotated soft Viterbi decoding and searches for the orthogonal ASM marker (`0xE53003E2`).
-- **Flywheel State Machine:** Operates across `SEARCH`, `LOCK`, and `FLYWHEEL` states to maintain frame alignment even during temporary signal degradations, resolving all four rotations ($0^\circ, 90^\circ, 180^\circ, 270^\circ$) without re-acquisition penalties.
+To eliminate cycle-slipping penalties and achieve zero-latency re-acquisition, the receiver implements a concurrent dual-branch architecture directly following the Costas carrier loop:
+- **In-Phase Branch ($0^\circ / 180^\circ$):** Feeds the Costas in-phase output directly to a Constellation Soft Decoder $\to$ FEC Extended Decoder (Viterbi $r=1/2, K=7$) $\to$ Tag Gate $\to$ Input `in_A` of the `Dual-Branch Flywheel Sync` block.
+- **Quadrature Branch ($90^\circ / 270^\circ$):** Multiplies the Costas output by $+j$ (`Multiply Const: 1j`) $\to$ Constellation Soft Decoder $\to$ FEC Extended Decoder $\to$ Tag Gate $\to$ Input `in_B` of the `Dual-Branch Flywheel Sync` block.
+- **Dual-Branch Flywheel State Machine:**
+  - Evaluates both branches concurrently against the nominal 32-bit ASM (`0x1ACFFC1D` for $0^\circ$ and $90^\circ$ after $+j$ rotation) and the inverted ASM (`0xE53003E2` for $180^\circ$ and $270^\circ$).
+  - Operates across `SEARCH`, `LOCK`, and `FLYWHEEL` states to maintain frame alignment through temporary symbol corruption.
+  - If a carrier cycle-slip occurs during high Doppler dynamics, frame synchronization transitions between branches instantaneously with **zero dropped symbols and zero re-acquisition latency**, completely eliminating the need for slow feedback phase-rotator loops.
 
 ---
 
@@ -118,13 +152,21 @@ To prevent catastrophic telemetry dropouts, the receiver runs a concurrent dual-
 
 ## Experimental Performance & Benchmarks
 
-### BER and FER Performance Sweep
+### Physical Layer Performance & Doppler Benchmark
 
 <p align="center">
-  <img src="docs/figures/ber_fer_sweep_9points.png" alt="BER and FER Performance Sweep" width="90%">
+  <img src="docs/figures/BER.png" alt="Physical Layer Performance and Benchmark Comparison" width="90%">
 </p>
 
-The receiver was characterized across an extensive 9-point parameter sweep from $E_b/N_0 = 2.00\text{ dB}$ to $4.00\text{ dB}$, evaluating up to $1,000,000$ frames ($1.78\text{ GB}$) per point under full orbital dynamics:
+The physical layer performance was benchmarked under static and dynamic channel conditions against theoretical bounds and the official CCSDS specification:
+- **Theory (Uncoded QPSK):** Theoretical baseline ($P_b = Q(\sqrt{2 E_b/N_0})$) illustrating uncoded channel performance.
+- **Curve given by CCSDS:** Reference performance curve published in the CCSDS 130.1-G Green Book for concatenated Reed-Solomon $RS(255, 223)$ ($I=8$) + Convolutional ($r=1/2, K=7$) coding.
+- **Ideal Simulation (BER):** Transceiver simulation under static AWGN channel conditions without Doppler offset. The decoded bit error rate closely matches the official CCSDS recommendation curve, achieving $\text{BER} \approx 2.4 \times 10^{-7}$ at $E_b/N_0 = 3.2\text{ dB}$.
+- **Doppler Simulation (BER):** Full end-to-end transceiver simulation subject to dynamic LEO orbital Doppler ($\pm 250\text{ kHz}$ frequency shift, $|\dot{f}_D| = 2.5\text{ kHz/s}$ drift rate) with autonomous 4th-power FFT coarse Doppler estimation and fine Costas tracking. The system demonstrates robust tracking with an implementation penalty of only $\approx 0.8\text{ dB}$ across the waterfall transition, descending steeply past $E_b/N_0 \ge 2.5\text{ dB}$ down to $\text{BER} < 10^{-6}$ at $4.0\text{ dB}$ and $\text{BER} \approx 1.5 \times 10^{-7}$ at $4.25\text{ dB}$.
+
+#### Frame-Level Error Rate Sweep (C++20 Diagnostic Suite)
+
+To validate frame integrity, the receiver was characterized across an extensive 9-point parameter sweep from $E_b/N_0 = 2.00\text{ dB}$ to $4.00\text{ dB}$, evaluating up to $1,000,000$ frames ($1.78\text{ GB}$) per point:
 
 | $E_b/N_0$ (dB) | Evaluated Frames | Valid CRC Frames | Lost Frames | Frame Error Rate (FER) | Bit Error Rate (BER) |
 | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -144,16 +186,31 @@ The receiver was characterized across an extensive 9-point parameter sweep from 
 
 ### DSP Computational Load Breakdown
 
-Comprehensive thread profiling was conducted to isolate computational bottlenecks across hardware architectures:
+Comprehensive thread profiling was conducted using Linux `procfs` and GNU Radio ControlPort to isolate computational bottlenecks across the SDR signal processing chain:
 
 <p align="center">
-  <img src="docs/figures/cpu_breakdown_local.png" alt="Local PC CPU Breakdown" width="48%">
-  <img src="docs/figures/cpu_breakdown_azure.png" alt="Azure VM CPU Breakdown" width="48%">
+  <img src="docs/figures/cpu_breakdown_local.png" alt="DSP Computational Load Breakdown (Local PC - Intel Core i5-1335U)" width="95%">
 </p>
 
-- **Primary Bottleneck #1 — Soft QPSK Demapper ($23.0\%$ total CPU):** Consumes over $122\%$ core capacity computing Euclidean distance metrics across the two orthogonal branches.
-- **Primary Bottleneck #2 — Polyphase Clock Sync ($18.5\%$ total CPU):** Saturates a single physical core at $98.5\%$ due to its 1,704-tap FIR interpolation filter bank.
-- **Throughput Sustained:** $14.53\text{ Mbps}$ on local multi-core hardware ($96.9\%$ of the $15\text{ Mbps}$ baseline target).
+#### Computational Bottleneck & Workload Analysis:
+
+The benchmark illustrates the computational profile executed on an Intel Core i5-1335U (10 cores / 12 threads) running at full line rate. The left bar chart reveals individual DSP block CPU consumption alongside physical core saturation; the right donut chart illustrates the relative global load distribution across all 12 worker threads ($532\%$ CPU total out of $1200\%$ available):
+
+1. **Primary Bottleneck #1 — Soft Demapper ($23.0\%$ of DSP load, $122.6\%$ core capacity):**
+   The Constellation Soft Decoder is the single most demanding block in the receiver. Because the receiver operates a dual-branch architecture ($0^\circ$ in-phase and $+90^\circ$ rotated branches), Log-Likelihood Ratio (LLR) Euclidean distance calculations must be evaluated simultaneously for every received QPSK symbol across both parallel branches. This dual-stream soft-metric calculation saturates over 1.2 physical CPU cores.
+
+2. **Primary Bottleneck #2 — Polyphase Clock Sync ($18.5\%$ of DSP load, $98.5\%$ core capacity):**
+   Symbol timing recovery utilizes a 32-arm polyphase filter bank with 53 taps per arm (a total of 1,704 FIR filter taps) at $sps = 2$. In GNU Radio's thread-per-block execution model, this single-threaded filter bank completely saturates a physical core at $98.5\%$, establishing the fundamental hardware ceiling for real-time sample consumption.
+
+3. **Demodulation & Decoding Workload:**
+   - **Downlink Channel Sim ($10.8\%$):** Emulates AWGN noise and dynamic orbital Doppler shift in simulation mode ($57.2\%$ core).
+   - **Costas Carrier Loop ($9.6\%$):** 4th-power phase error detection and loop filtering require $51.2\%$ of a core.
+   - **Dual-Branch Viterbi Decoder ($5.1\%$):** Highly optimized SIMD trellis traceback keeps convolutional decoding at only $\sim 27\%$ core utilization per branch.
+   - **Coarse Doppler Sync ($5.1\%$):** Decimated buffer FFT processing runs asynchronously with negligible computational overhead.
+   - **Reed-Solomon Decoder ($1.3\%$):** $RS(255, 223)$ with depth-8 de-interleaving accounts for just $7.1\%$ of a single core, demonstrating that outer FEC is computationally lightweight compared to front-end physical-layer filtering.
+
+4. **Sustained Real-Time Throughput:**
+   The SDR transceiver achieves **$14.53\text{ Mbps}$ sustained throughput** on commodity multi-core hardware ($96.9\%$ of the $15\text{ Mbps}$ baseline target). Benchmark validation on Microsoft Azure cloud virtual machines (AMD EPYC 7763, documented in [**`docs/CPU_BREAKDOWN_METRICS.md`**](docs/CPU_BREAKDOWN_METRICS.md)) demonstrated identical bottleneck scaling ($21.1\%$ Soft Demod, $18.5\%$ PFB Clock Sync), confirming that SIMD vectorization (AVX2/AVX-512) for LLR demapping and multi-stage decimation for the PFB filter bank are the primary levers to surpass $25\text{ Mbps}$.
 
 Detailed metrics are available in [**`docs/CPU_BREAKDOWN_METRICS.md`**](docs/CPU_BREAKDOWN_METRICS.md).
 
