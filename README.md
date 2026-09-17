@@ -164,55 +164,21 @@ The physical layer performance was benchmarked under static and dynamic channel 
 - **Ideal Simulation (BER):** Transceiver simulation under static AWGN channel conditions without Doppler offset. The decoded bit error rate closely matches the official CCSDS recommendation curve, achieving $\text{BER} \approx 2.4 \times 10^{-7}$ at $E_b/N_0 = 3.2\text{ dB}$.
 - **Doppler Simulation (BER):** Full end-to-end transceiver simulation subject to dynamic LEO orbital Doppler ($\pm 250\text{ kHz}$ frequency shift, $|\dot{f}_D| = 2.5\text{ kHz/s}$ drift rate) with autonomous 4th-power FFT coarse Doppler estimation and fine Costas tracking. The system demonstrates robust tracking with an implementation penalty of only $\approx 0.8\text{ dB}$ across the waterfall transition, descending steeply past $E_b/N_0 \ge 2.5\text{ dB}$ down to $\text{BER} < 10^{-6}$ at $4.0\text{ dB}$ and $\text{BER} \approx 1.5 \times 10^{-7}$ at $4.25\text{ dB}$.
 
-#### Frame-Level Error Rate Sweep (C++20 Diagnostic Suite)
-
-To validate frame integrity, the receiver was characterized across an extensive 9-point parameter sweep from $E_b/N_0 = 2.00\text{ dB}$ to $4.00\text{ dB}$, evaluating up to $1,000,000$ frames ($1.78\text{ GB}$) per point:
-
-| $E_b/N_0$ (dB) | Evaluated Frames | Valid CRC Frames | Lost Frames | Frame Error Rate (FER) | Bit Error Rate (BER) |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| **2.00** | 60,000 | 29,484 | 30,516 | $5.086 \times 10^{-1}$ | $2.543 \times 10^{-1}$ |
-| **2.25** | 60,000 | 50,006 | 9,994 | $1.666 \times 10^{-1}$ | $8.328 \times 10^{-2}$ |
-| **2.50** | 60,000 | 58,187 | 1,813 | $3.022 \times 10^{-2}$ | $1.511 \times 10^{-2}$ |
-| **2.75** | 300,000 | 299,235 | 765 | $2.550 \times 10^{-3}$ | $1.275 \times 10^{-3}$ |
-| **3.00** | 300,000 | 299,842 | 158 | $5.267 \times 10^{-4}$ | $2.633 \times 10^{-4}$ |
-| **3.25** | 300,000 | 299,908 | 92 | $3.067 \times 10^{-4}$ | $1.533 \times 10^{-4}$ |
-| **3.50** | 1,000,000 | 999,717 | 283 | $2.830 \times 10^{-4}$ | $1.415 \times 10^{-4}$ |
-| **3.75** | 1,000,000 | 999,740 | 260 | $2.600 \times 10^{-4}$ | $1.300 \times 10^{-4}$ |
-| **4.00** | 1,000,000 | 999,788 | 212 | $2.120 \times 10^{-4}$ | $1.060 \times 10^{-4}$ |
-
-> **Key Takeaway:** At $E_b/N_0 \ge 3.0\text{ dB}$, the system operates well into the high-reliability regime ($\text{FER} < 5 \cdot 10^{-4}$). For all received valid frames, the bit error rate post-Reed-Solomon decoding is **strictly zero** ($\text{Sync BER} = 0.0000\text{e}+00$).
-
 ---
 
 ### DSP Computational Load Breakdown
 
-Comprehensive thread profiling was conducted using Linux `procfs` and GNU Radio ControlPort to isolate computational bottlenecks across the SDR signal processing chain:
+Thread profiling on multi-core hardware running at full line rate identifies the primary computational limits of the SDR architecture:
 
 <p align="center">
   <img src="docs/figures/cpu_breakdown_local.png" alt="DSP Computational Load Breakdown (Local PC - Intel Core i5-1335U)" width="95%">
 </p>
 
-#### Computational Bottleneck & Workload Analysis:
+- **Soft QPSK Demapper ($23.0\%$ CPU / $122.6\%$ single-core):** Primary bottleneck. Computes concurrent Euclidean distance LLR metrics across both in-phase and quadrature branches.
+- **Polyphase Clock Sync ($18.5\%$ CPU / $98.5\%$ single-core):** Saturates a physical execution thread due to the 1,704-tap FIR interpolation filter bank (32 phases $\times$ 53 taps at $sps=2$).
+- **Throughput Sustained:** **$14.53\text{ Mbps}$** real-time streaming ($96.9\%$ of the $15\text{ Mbps}$ baseline target), verified with consistent bottleneck scaling on Azure cloud VMs (AMD EPYC 7763).
 
-The benchmark illustrates the computational profile executed on an Intel Core i5-1335U (10 cores / 12 threads) running at full line rate. The left bar chart reveals individual DSP block CPU consumption alongside physical core saturation; the right donut chart illustrates the relative global load distribution across all 12 worker threads ($532\%$ CPU total out of $1200\%$ available):
-
-1. **Primary Bottleneck #1 — Soft Demapper ($23.0\%$ of DSP load, $122.6\%$ core capacity):**
-   The Constellation Soft Decoder is the single most demanding block in the receiver. Because the receiver operates a dual-branch architecture ($0^\circ$ in-phase and $+90^\circ$ rotated branches), Log-Likelihood Ratio (LLR) Euclidean distance calculations must be evaluated simultaneously for every received QPSK symbol across both parallel branches. This dual-stream soft-metric calculation saturates over 1.2 physical CPU cores.
-
-2. **Primary Bottleneck #2 — Polyphase Clock Sync ($18.5\%$ of DSP load, $98.5\%$ core capacity):**
-   Symbol timing recovery utilizes a 32-arm polyphase filter bank with 53 taps per arm (a total of 1,704 FIR filter taps) at $sps = 2$. In GNU Radio's thread-per-block execution model, this single-threaded filter bank completely saturates a physical core at $98.5\%$, establishing the fundamental hardware ceiling for real-time sample consumption.
-
-3. **Demodulation & Decoding Workload:**
-   - **Downlink Channel Sim ($10.8\%$):** Emulates AWGN noise and dynamic orbital Doppler shift in simulation mode ($57.2\%$ core).
-   - **Costas Carrier Loop ($9.6\%$):** 4th-power phase error detection and loop filtering require $51.2\%$ of a core.
-   - **Dual-Branch Viterbi Decoder ($5.1\%$):** Highly optimized SIMD trellis traceback keeps convolutional decoding at only $\sim 27\%$ core utilization per branch.
-   - **Coarse Doppler Sync ($5.1\%$):** Decimated buffer FFT processing runs asynchronously with negligible computational overhead.
-   - **Reed-Solomon Decoder ($1.3\%$):** $RS(255, 223)$ with depth-8 de-interleaving accounts for just $7.1\%$ of a single core, demonstrating that outer FEC is computationally lightweight compared to front-end physical-layer filtering.
-
-4. **Sustained Real-Time Throughput:**
-   The SDR transceiver achieves **$14.53\text{ Mbps}$ sustained throughput** on commodity multi-core hardware ($96.9\%$ of the $15\text{ Mbps}$ baseline target). Benchmark validation on Microsoft Azure cloud virtual machines (AMD EPYC 7763, documented in [**`docs/CPU_BREAKDOWN_METRICS.md`**](docs/CPU_BREAKDOWN_METRICS.md)) demonstrated identical bottleneck scaling ($21.1\%$ Soft Demod, $18.5\%$ PFB Clock Sync), confirming that SIMD vectorization (AVX2/AVX-512) for LLR demapping and multi-stage decimation for the PFB filter bank are the primary levers to surpass $25\text{ Mbps}$.
-
-Detailed metrics are available in [**`docs/CPU_BREAKDOWN_METRICS.md`**](docs/CPU_BREAKDOWN_METRICS.md).
+Detailed profiling metrics are available in [**`docs/CPU_BREAKDOWN_METRICS.md`**](docs/CPU_BREAKDOWN_METRICS.md).
 
 ---
 
