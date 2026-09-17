@@ -37,35 +37,19 @@ scripts/output
 scripts/results
 scripts/samples
 
-# LaTeX auxiliary build files
-docs/latex/*.aux
-docs/latex/*.bbl
-docs/latex/*.bcf
-docs/latex/*.blg
-docs/latex/*.fdb_latexmk
-docs/latex/*.fls
-docs/latex/*.log
-docs/latex/*.out
-docs/latex/*.run.xml
-docs/latex/*.synctex.gz
-docs/latex/*.toc
-*.aux
-*.bbl
-*.bcf
-*.blg
-*.log
-*.out
-*.toc
-.aux/
+# LaTeX source and thesis PDF documents (excluded from public repository)
+docs/latex/
+*.pdf
+docs/*.pdf
 
 # GNU Radio temporary files
 *.py.orig
 *.grc.orig
+flowgraphs/results
+flowgraphs/samples
 
 # External Reference Literature and Textbooks
 docs/references/
-Page 1.pdf
-docs/Page 1.pdf
 
 # IDEs and OS files
 .idea/

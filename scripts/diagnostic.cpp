@@ -1,8 +1,17 @@
+/**
+ * @file diagnostic.cpp
+ * @brief Hardware-accelerated CCSDS frame synchronization, CRC-16, and BER/FER analyzer.
+ * 
+ * Author: Daniel Pereira Riquelme
+ * Institution: EPFL Spacecraft Team / Telecommunications Circuits Laboratory (TCL)
+ * License: GPL-3.0
+ */
+
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cstdint>
-#include <bit>       // Para std::popcount (C++20)
+#include <bit>       // std::popcount (C++20)
 #include <algorithm>
 #include <iomanip>
 #include <string>
@@ -10,9 +19,8 @@
 
 namespace fs = std::filesystem;
 
-//! Cambiar la linea 206 si cambia el nombre de los archivos
 // --- Parameters ---
-const size_t FRAME_SIZE = 1784; // Cambiar a 223 para I=1, o 1115 para I=5
+const size_t FRAME_SIZE = 1784; // Set to 223 for I=1, 1115 for I=5, or 1784 for I=8
 const size_t WARMUP_FRAMES = 0;
 const size_t TAIL_FRAMES = 10;
 const size_t ALIGN_WINDOW = 100;
@@ -197,10 +205,6 @@ std::string find_project_root() {
 int main(int argc, char* argv[]) {
     std::string root = find_project_root();
     
-    std::string TX_FILE = fs::exists(root + "data/test_signal_0.06Ms_CCSDS_I_8") 
-                        ? (root + "data/test_signal_0.06Ms_CCSDS_I_8")
-                        : (root + "files/test_signal_0.06Ms_CCSDS_I_8");
-                        
     std::string SAMPLES_DIR = fs::exists(root + "output/samples/test/")
                             ? (root + "output/samples/test/")
                             : (root + "samples/test/");
@@ -216,17 +220,6 @@ int main(int argc, char* argv[]) {
 
     fs::create_directories(RESULT_DIR);
 
-    std::cout << "Loading Reference TX file into memory (" << TX_FILE << ")..." << std::endl;
-    std::ifstream tx_stream(TX_FILE, std::ios::binary | std::ios::ate);
-    if (!tx_stream) {
-        std::cerr << "Error: Could not open TX file at " << TX_FILE << "!" << std::endl;
-        return 1;
-    }
-    size_t tx_size = tx_stream.tellg();
-    tx_stream.seekg(0, std::ios::beg);
-    std::vector<uint8_t> tx_data(tx_size);
-    tx_stream.read(reinterpret_cast<char*>(tx_data.data()), tx_size);
-
     std::vector<std::string> rx_files;
     if (argc > 1) {
         std::string arg = argv[1];
@@ -241,7 +234,7 @@ int main(int argc, char* argv[]) {
     } else {
         for (const auto& entry : fs::directory_iterator(SAMPLES_DIR)) {
             std::string filename = entry.path().filename().string();
-            // Busca prefijo "output_2m_"
+            // Look for prefix "output_2m_"
             if (filename.find("output_2m_") == 0) {
                 rx_files.push_back(filename);
             }
@@ -255,6 +248,42 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+
+    std::string TX_FILE = "";
+    if (argc > 2) {
+        TX_FILE = argv[2];
+    } else if (!rx_files.empty()) {
+        std::string first_rx = rx_files[0];
+        size_t rx_fsize = fs::exists(first_rx) ? fs::file_size(first_rx) : 0;
+        if (rx_fsize > 1000000000ULL) {
+            TX_FILE = fs::exists(root + "data/test_signal_1Ms_CCSDS_I_8")
+                    ? (root + "data/test_signal_1Ms_CCSDS_I_8")
+                    : (root + "files/test_signal_1Ms_CCSDS_I_8");
+        } else if (rx_fsize > 300000000ULL) {
+            TX_FILE = fs::exists(root + "data/test_signal_0.3Ms_CCSDS_I_8")
+                    ? (root + "data/test_signal_0.3Ms_CCSDS_I_8")
+                    : (root + "files/test_signal_0.3Ms_CCSDS_I_8");
+        } else {
+            TX_FILE = fs::exists(root + "data/test_signal_0.06Ms_CCSDS_I_8") 
+                    ? (root + "data/test_signal_0.06Ms_CCSDS_I_8")
+                    : (root + "files/test_signal_0.06Ms_CCSDS_I_8");
+        }
+    } else {
+        TX_FILE = fs::exists(root + "data/test_signal_0.06Ms_CCSDS_I_8") 
+                ? (root + "data/test_signal_0.06Ms_CCSDS_I_8")
+                : (root + "files/test_signal_0.06Ms_CCSDS_I_8");
+    }
+
+    std::cout << "Loading Reference TX file into memory (" << TX_FILE << ")..." << std::endl;
+    std::ifstream tx_stream(TX_FILE, std::ios::binary | std::ios::ate);
+    if (!tx_stream) {
+        std::cerr << "Error: Could not open TX file at " << TX_FILE << "!" << std::endl;
+        return 1;
+    }
+    size_t tx_size = tx_stream.tellg();
+    tx_stream.seekg(0, std::ios::beg);
+    std::vector<uint8_t> tx_data(tx_size);
+    tx_stream.read(reinterpret_cast<char*>(tx_data.data()), tx_size);
 
     std::sort(rx_files.begin(), rx_files.end());
 

@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+"""
+Doppler Frequency Logger and Transceiver Patch Runner
+=====================================================
+Injects asynchronous message-passing listeners into the generated GNU Radio top block
+to extract real-time carrier frequency estimations under dynamic Doppler shifts.
+
+Author: Daniel Pereira Riquelme
+Institution: EPFL Spacecraft Team / Telecommunications Circuits Laboratory (TCL)
+License: GPL-3.0
+"""
 import sys
 import os
 import subprocess

@@ -2,8 +2,12 @@
 """
 CCSDS CADU Transfer Frame Generator
 ====================================
-Generates standard CCSDS 131.0-B-3 Transfer Frames (1784 bytes payload)
+Generates standard CCSDS 131.0-B-5 Transfer Frames (1784 bytes payload)
 with 6-byte primary header, sequence count, pseudo-random data, and CRC-16 CCITT.
+
+Author: Daniel Pereira Riquelme
+Institution: EPFL Spacecraft Team / Telecommunications Circuits Laboratory (TCL)
+License: GPL-3.0
 
 Usage:
     python3 generate_test_frames.py --frames 1000 --output ../data/test_signal_sample.bin

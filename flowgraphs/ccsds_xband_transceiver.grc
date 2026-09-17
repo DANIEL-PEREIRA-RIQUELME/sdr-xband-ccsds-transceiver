@@ -9,7 +9,7 @@ options:
     description: ''
     gen_cmake: 'On'
     gen_linking: dynamic
-    generate_options: no_gui
+    generate_options: qt_gui
     hier_block_src_path: '.:'
     id: RS_CC_TX_RCV
     max_nouts: '0'
@@ -49,7 +49,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '3'
+    value: '14'
   states:
     bus_sink: false
     bus_source: false
@@ -396,7 +396,7 @@ blocks:
     bus_structure: null
     coordinate: [2464, 732.0]
     rotation: 0
-    state: disabled
+    state: enabled
 
 connections:
 - [blocks_file_source_0_0_0_0_0, '0', ccsds_concatenated_tx_0, '1']
