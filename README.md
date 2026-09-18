@@ -234,22 +234,75 @@ The receiver architecture was developed with flight readiness in mind, supportin
 
 ## Quickstart
 
-### Prerequisites
-- Linux (Ubuntu 22.04 LTS / 24.04 LTS)
-- GNU Radio 3.10+
-- GCC 11+ with C++20 support (`std::popcount`, `std::filesystem`)
-- Out-of-tree modules: `gr-chess` (EPFL) and `gr-satellites`
+### Prerequisites & Dependencies
 
-### 1. Compile Hierarchical Blocks
-Register the encapsulated transmitter and receiver hierarchical blocks into GNU Radio:
+The simulation framework runs on Linux (Ubuntu 22.04 LTS / 24.04 LTS) and requires GNU Radio 3.10+, GCC 11+ with C++20 support, and standard numerical scientific libraries:
+
+```bash
+sudo apt update
+sudo apt install -y gnuradio gnuradio-dev cmake g++ git \
+                    python3-pip python3-matplotlib python3-scipy python3-numpy \
+                    pybind11-dev libfmt-dev libspdlog-dev libvolk2-dev
+```
+
+#### Out-of-Tree (OOT) Module Dependencies
+
+This project relies on three specialized GNU Radio Out-Of-Tree modules. They must be installed in your environment prior to launching the flowgraphs:
+
+1. [**gr-chess**](https://github.com/DANIEL-PEREIRA-RIQUELME/gr-chess) (EPFL CHESS Baseband Library):
+   Core physical-layer module developed for the CHESS CubeSat. Provides the Blind 4th-Power FFT Doppler Coarse Estimator (`chess.coarse_doppler_sync`), Keplerian Downlink Channel Simulator (`chess.downlink_channel`), and the Dual-Branch Flywheel Frame Synchronizer (`chess.fast_sync`).
+2. [**gr-HighDataRate_Modem**](https://github.com/DavidToddMiller/gr-HighDataRate_Modem) (`gr-highspeedmodem`):
+   Provides high-rate soft demapping, Viterbi soft-decision decoding, and high-throughput symbol synchronization for telemetry links.
+3. [**gr-satellites**](https://github.com/daniestevez/gr-satellites):
+   Provides telemetry framing infrastructure, CCSDS pseudo-randomization (scrambling/descrambling), and Reed-Solomon coding tools.
+
+---
+
+### Step-by-Step Installation
+
+#### 1. Clone and Install OOT Dependencies
+
+```bash
+# A. Install gr-satellites
+git clone https://github.com/daniestevez/gr-satellites.git
+cd gr-satellites && mkdir -p build && cd build
+cmake ..
+make -j$(nproc)
+sudo make install
+sudo ldconfig
+cd ../..
+
+# B. Install gr-HighDataRate_Modem (gr-highspeedmodem)
+git clone https://github.com/DavidToddMiller/gr-HighDataRate_Modem.git
+cd gr-HighDataRate_Modem && mkdir -p build && cd build
+cmake ..
+make -j$(nproc)
+sudo make install
+sudo ldconfig
+cd ../..
+
+# C. Install gr-chess
+git clone https://github.com/DANIEL-PEREIRA-RIQUELME/gr-chess.git
+cd gr-chess && mkdir -p build && cd build
+cmake ..
+make -j$(nproc)
+ctest --output-on-failure
+sudo make install
+sudo ldconfig
+cd ../..
+```
+
+#### 2. Compile Hierarchical Blocks
+Register the encapsulated transmitter and receiver hierarchical blocks into your local GNU Radio block tree:
 
 ```bash
 cd flowgraphs/hier_blocks
 grcc -u ccsds_concatenated_tx.grc
 grcc -u ccsds_concatenated_rx.grc
+cd ../..
 ```
 
-### 2. Run End-to-End Simulation
+#### 3. Run End-to-End Simulation
 Execute the top-level runner to simulate transmission, dynamic Doppler channel effects, and automated C++20 frame diagnostic evaluation:
 
 ```bash
@@ -257,28 +310,28 @@ Execute the top-level runner to simulate transmission, dynamic Doppler channel e
 python3 main_transceiver_simulation.py --ebn0 3.50
 ```
 
-### 3. Run Diagnostic Analyzer Manually
-Analyze decoded binary outputs against original reference frames:
+Or run an automated Monte-Carlo batch sweep across multiple Eb/N0 points:
+
+```bash
+bash scripts/master_run.sh
+```
+
+#### 4. Run Diagnostic Analyzer Manually
+Analyze decoded binary outputs against original reference frames with hardware-accelerated CRC-16 and bit error rate checking:
 
 ```bash
 cd scripts
 g++ -O3 -std=c++20 diagnostic.cpp -o diagnostic
 ./diagnostic
+cd ..
 ```
 
-### 4. Synthesize Custom CADU Test Vectors
+#### 5. Synthesize Custom CADU Test Vectors
 Generate synthetic CCSDS CADU frames with valid primary headers, sequential counters, pseudo-random payload, and terminal CRC-16:
 
 ```bash
 python3 scripts/generate_test_frames.py --frames 10000 --output data/custom_test_frames.bin
 ```
-
----
-
-## Research Specifications
-
-- 📖 [**Blind Doppler Frequency Estimation via 4th-Power Non-Linearity and FFT**](docs/Blind_Doppler_Estimation_Mth_Power_FFT_CCSDS.md): Mathematical derivation, coherent FFT integration gain ($G_{FFT} \approx 36.1\text{ dB}$), and sub-bin Jacobsen interpolation for autonomous ephemeris-free carrier tracking.
-- 📊 [**DSP Block CPU Utilization Breakdown: Azure VM vs. Local Workstation**](docs/CPU_BREAKDOWN_METRICS.md): In-depth computational profile identifying the Soft Demapper and Polyphase Clock Sync bottlenecks on multi-threaded architectures.
 
 ---
 
