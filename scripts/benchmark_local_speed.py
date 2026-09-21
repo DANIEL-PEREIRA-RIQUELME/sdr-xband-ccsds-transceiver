@@ -125,7 +125,7 @@ def main():
 
     reaches_15mbps = encoded_mbps >= 15.0
     status_str = "ALCANZADO / SUPERADO" if reaches_15mbps else "NO ALCANZADO"
-    print(f"  ¿Alcanza los 15 Mbps?: [{status_str}] ({encoded_mbps:.2f} Mbps / 15.00 Mbps -> {encoded_mbps/15.0*100:.1f}%)")
+    print(f"  Reaches 15 Mbps?: [{status_str}] ({encoded_mbps:.2f} Mbps / 15.00 Mbps -> {encoded_mbps/15.0*100:.1f}%)")
     print("=" * 65)
 
     # Run diagnostic

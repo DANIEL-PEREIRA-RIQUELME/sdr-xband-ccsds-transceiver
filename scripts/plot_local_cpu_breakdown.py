@@ -136,7 +136,7 @@ for bar, pct, core in zip(bars, pcts, cores):
 # Cuello de botella #1 Callout (Soft Demod)
 idx_top1 = len(labels) - 1
 ax1.annotate(
-    "CUELLO DE BOTELLA #1\n(Soft Demod Dual: 122.6% CPU core)",
+    "BOTTLENECK #1\n(Soft Demod Dual: 122.6% CPU core)",
     xy=(pcts[idx_top1], idx_top1),
     xytext=(13.5, idx_top1 - 1.0),
     bbox=dict(boxstyle="round,pad=0.4", fc="#fadbd8", ec="#c0392b", lw=1.5),
@@ -149,7 +149,7 @@ ax1.annotate(
 # Cuello de botella #2 Callout (PFB Clock Sync)
 idx_top2 = len(labels) - 2
 ax1.annotate(
-    "CUELLO DE BOTELLA #2\n(Satura 1 núcleo al 98.5% - 1704 taps)",
+    "BOTTLENECK #2\n(saturates one core at 98.5% - 1704 taps)",
     xy=(pcts[idx_top2], idx_top2),
     xytext=(11.5, idx_top2 - 1.7),
     bbox=dict(boxstyle="round,pad=0.4", fc="#fdebd0", ec="#d35400", lw=1.5),
@@ -186,7 +186,7 @@ ax2.text(
     color='#2c3e50'
 )
 
-ax2.set_title("Distribución Global de la Carga de Cómputo", fontsize=14, fontweight='bold', pad=15)
+ax2.set_title("Overall CPU Load Distribution", fontsize=14, fontweight='bold', pad=15)
 ax2.legend(
     wedges,
     pie_labels,
