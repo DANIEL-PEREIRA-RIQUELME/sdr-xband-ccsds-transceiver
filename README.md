@@ -12,7 +12,7 @@ Software-defined transmitter, LEO channel model and receiver for an X-band (8.4 
 
 This is my bachelor's thesis (TFG), developed for the CHESS CubeSat mission (Pathfinder 0) with the EPFL Spacecraft Team and the Telecommunications Circuits Laboratory (TCL). The GNU Radio blocks written for it live in a separate module, [gr-chess](https://github.com/DANIEL-PEREIRA-RIQUELME/gr-chess).
 
-**Status:** everything reported here comes from simulation with recorded/generated baseband samples. The receiver has not been validated against a real spacecraft signal.
+**Status:** all results come from simulation, with synthetic CCSDS frames going through the modelled channel. The receiver has not been tested on a real satellite signal.
 
 ## What is implemented
 
@@ -20,7 +20,7 @@ This is my bachelor's thesis (TFG), developed for the CHESS CubeSat mission (Pat
 - **Channel:** LEO Doppler model (475 km orbit, ±250 kHz, up to 2.5 kHz/s) and AWGN calibrated per Eb/N0.
 - **Receiver:** AGC, polyphase timing recovery, Costas loop, soft-decision Viterbi decoding, frame synchronizer, descrambler and RS decoder.
 - **Blind Doppler estimator:** 4th-power non-linearity plus FFT with parabolic peak interpolation. Details in [docs/Blind_Doppler_Estimation_Mth_Power_FFT_CCSDS.md](docs/Blind_Doppler_Estimation_Mth_Power_FFT_CCSDS.md).
-- **Dual-branch frame synchronizer:** the Costas output is decoded twice, directly and rotated by +j. A SEARCH/LOCK/FLYWHEEL state machine looks for the ASM (`0x1ACFFC1D`) and its inverse (`0xE53003E2`) in both branches, which covers the four QPSK phase ambiguities. This handles the ambiguity; it does not prevent Costas cycle slips.
+- **Dual-branch frame synchronizer:** the Costas output is decoded twice, directly and rotated by +j. The synchronizer (`chess.fast_sync`) searches the ASM (`0x1ACFFC1D`) and its inverse (`0xE53003E2`) in both branches and locks to the first match, which covers the four QPSK phase ambiguities. Once locked it stays on that branch until several consecutive ASMs fail. It resolves the ambiguity; it does not prevent Costas cycle slips.
 - **Diagnostic tool (C++20):** compares decoded frames with the reference, computing BER, FER and CRC-16 (`scripts/diagnostic.cpp`).
 
 ## Architecture
@@ -72,7 +72,7 @@ Real-time throughput is limited by the CPU, not by the algorithms. On an Intel C
 
 ## Installation
 
-Tested on Ubuntu 22.04 and 24.04. Requires GNU Radio 3.10+ and a C++20 compiler (GCC 11+).
+Developed and run on Ubuntu 24.04 (GNU Radio 3.10, GCC 13). Requires GNU Radio 3.10+ and a C++20 compiler (GCC 11+).
 
 ```bash
 sudo apt update
@@ -99,29 +99,37 @@ grcc -u ccsds_concatenated_rx.grc
 
 ## Usage
 
+Use the system Python, not a Conda one, so that GNU Radio and the installed modules are found.
+
 ```bash
-# One simulation at Eb/N0 = 3.5 dB
+# One simulation at Eb/N0 = 3.5 dB on the 60,000-frame vector (generated if missing)
 python3 main_transceiver_simulation.py --ebn0 3.50
 
-# Sweep over several Eb/N0 points
-bash scripts/master_run.sh
+# Quick run on the 1,000-frame vector included in the repository
+python3 main_transceiver_simulation.py --ebn0 4.0 --signal 0.001Ms
 
-# Build and run the frame analyzer by hand
-g++ -O3 -std=c++20 scripts/diagnostic.cpp -o scripts/diagnostic
-./scripts/diagnostic
+# Several Eb/N0 points, one after another
+python3 scripts/batch_runner_local.py
+```
 
-# Generate synthetic CADU test frames
+Each run writes `output/results/test/result_point_<Eb/N0>.json` and a text report with FER and BER. FER counts frames that were lost or failed the CRC. "System BER" adds a 50 % bit error penalty for every such frame; "Sync BER" only counts bit errors inside frames received with a valid CRC. Frames lost while the receiver is acquiring at the start of the file are included, so short vectors show a higher FER than long ones.
+
+Other tools:
+
+```bash
 python3 scripts/generate_test_frames.py --frames 10000 --output data/custom_test_frames.bin
+g++ -O3 -std=c++20 scripts/diagnostic.cpp -o scripts/diagnostic    # frame analyzer, built automatically when needed
 ```
 
 ## Repository layout
 
 ```
 main_transceiver_simulation.py   simulation entry point
-flowgraphs/                      GRC flowgraphs and hierarchical blocks
-scripts/                         analyzer, plotting, profiling and batch scripts
-data/                            ASM file and test vectors (1,000 and 60,000 frames)
-docs/                            theory notes, profiling data and figures
+flowgraphs/                      GRC flowgraph (GUI) and hierarchical blocks
+scripts/                         run_point.py (headless runner), diagnostic.cpp, batch runners,
+                                 plotting and CPU profiling
+data/                            ASM file and the 1,000-frame test vector
+docs/                            Doppler estimator note, CPU profiling and figures
 ```
 
 ## License and acknowledgements

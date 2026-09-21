@@ -61,7 +61,7 @@ Thumbs.db
 scripts/temp_*.py
 scripts/test_*.py
 scripts/run_*.py
+!scripts/run_point.py
 scripts/run_1Ms.sh
 scripts/perf_metrics*.json
 flowgraphs/*.py
-!flowgraphs/RS_CC_TX_RCV.py

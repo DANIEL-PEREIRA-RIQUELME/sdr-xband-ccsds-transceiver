@@ -1,198 +1,140 @@
-# Blind Doppler Frequency Estimation via 4th-Power Non-Linearity and FFT for CCSDS X-Band Downlinks
+# Blind Doppler Estimation with the M-th Power and FFT
 
-**Project:** High-Data-Rate Software-Defined Radio (SDR) Receiver in X-Band (CHESS CubeSat Mission / Pathfinder 0)  
-**Reference Standards:** CCSDS 131.0-B-5 (TM Synchronization and Channel Coding), CCSDS 132.0-B-3 (TM Space Data Link Protocol)  
-**Author:** Daniel Pereira Riquelme  
-**Institution:** EPFL Spacecraft Team / Telecommunications Circuits Laboratory (TCL)  
+Coarse carrier frequency estimation for a CCSDS 131.0-B-5 QPSK downlink in X-band, as implemented in the `chess.coarse_doppler_sync` block of [gr-chess](https://github.com/DANIEL-PEREIRA-RIQUELME/gr-chess).
 
----
+**Author:** Daniel Pereira Riquelme, EPFL Spacecraft Team / Telecommunications Circuits Laboratory (TCL), CHESS CubeSat mission (Pathfinder 0)
 
-## 1. Introduction and Operational Motivation
-
-In Low Earth Orbit (LEO) satellite downlinks operating in X-band ($f_0 \approx 8.4\text{ GHz} - 10.475\text{ GHz}$), the high relative velocity between the space platform and the terrestrial ground station introduces severe dynamic Doppler frequency shifts of up to $\Delta f_D \approx \pm 250\text{ kHz}$ with high drift rates of $|\dot{f}_D| \approx 2 - 3\text{ kHz/s}$ at pass zenith. In addition, thermal variations in the satellite Local Oscillator (LO) and the ground station Low Noise Block (LNB) introduce static frequency offsets of up to $\pm 30\text{ to }50\text{ kHz}$.
-
-Classical carrier recovery loops in digital receivers (such as 4th-order Costas Loops for QPSK) employ a narrow loop bandwidth ($B_L \ll R_{sym}$) to minimize phase jitter and SNR degradation. Consequently, their pull-in acquisition range is strictly confined to a few hundred hertz to kilohertz. If the received carrier frequency offset falls outside this capture window, the Costas loop suffers from false locks or cycle-slipping phase spinning.
-
-To eliminate dependencies on external orbital ephemerides (TLEs) or third-party tracking software (such as Gpredict), the receiver requires a **Non-Data-Aided (Blind) Coarse Frequency Estimation** stage. The **$M$-th power non-linearity coupled with Fast Fourier Transform spectral discrimination ($M$-th Power + FFT)**, originally formulated by Viterbi & Viterbi (1983) and Rife & Boorstyn (1974), provides an optimal Maximum Likelihood (ML) solution with high coherent processing gain.
+This note explains why the estimator is needed, how it works, which parameters the flowgraph uses, and what has and has not been verified.
 
 ---
 
-## 2. CCSDS Frame Structure and Modulation Model
+## 1. Why a coarse estimator is needed
 
-The CCSDS 131.0-B-5 standard defines a layered transmission architecture based on concatenated coding packaged into Channel Access Data Units (**CADU**).
+For a LEO pass at 8.4 GHz the carrier offset seen by the ground station has two parts:
 
-### 2.1 CADU Frame Format ($I=8$)
-For an interleaving depth of $I=8$, the CADU transmission structure is organized as follows:
+- Orbital Doppler, up to about ±250 kHz, changing at roughly 2.5 kHz/s near zenith.
+- Oscillator offsets of the satellite transmitter and the receiver front end, in the order of ±30 to 50 kHz.
 
-```
-+-----------------------------------------------------------------------------------+
-|                            CADU (Channel Access Data Unit)                        |
-+-------------------+---------------------------------------------------------------+
-|   ASM (32 bits)   |                 Encoded Transfer Frame                        |
-|    0x1ACFFC1D     |   Reed-Solomon RS(255, 223) with Interleaving I=8 (2040 Bytes)|
-|     (4 Bytes)     |              [ 1784 Bytes Payload + 256 Bytes Parity ]        |
-+-------------------+---------------------------------------------------------------+
-| <--- 32 bits ---> | <------------------------ 16320 bits -----------------------> |
-```
+A QPSK Costas loop has to use a narrow loop bandwidth to keep phase jitter low, so it can only pull in offsets of a few kilohertz at most. Outside that range it fails to lock or slips cycles. A coarse stage in front of it has to bring the residual offset inside the pull-in range. Doing this blindly, from the signal alone, avoids depending on orbit predictions (TLEs) or a tracking program.
 
-1. **Information Payload ($1,784\text{ Bytes}$):**
-   - Corresponds to 8 transfer blocks of $223\text{ bytes}$ each ($8 \times 223 = 1,784\text{ bytes}$).
-   - Encapsulates the 6-byte CCSDS Space Packet header (SCID, VCID, MCFC/VCFC counters), application telemetry, and a terminal CRC-16.
-2. **Reed-Solomon RS(255, 223) Coding:**
-   - 32 parity bytes per 223-byte block, generating 255-byte codewords ($8 \times 255 = 2,040\text{ bytes} = 16,320\text{ bits}$).
-   - Error-correction capability: $t = 16\text{ byte errors}$ per codeword ($16 \times 8 = 128\text{ bytes}$ burst capability with $I=8$).
-3. **Pseudo-Randomization (Scrambling):**
-   - The 16,320-bit block is XOR-ed with the CCSDS pseudo-random sequence generated by $h(x) = x^8 + x^7 + x^5 + x^3 + 1$ to guarantee symbol transition density and eliminate spectral peaks.
-4. **Attached Sync Marker (ASM):**
-   - 32-bit fixed synchronization preamble:
-     $$\text{ASM} = \mathtt{0x1ACFFC1D} = (0001\,1010\,1100\,1111\,1111\,1100\,0001\,1101)_2$$
-   - Under $90^\circ$ QPSK phase ambiguities, the orthogonal rotated ASM marker is:
-     $$\text{ASM}_{rot} = \mathtt{0xE53003E2}$$
-   - The ASM is transmitted un-scrambled to preserve delta-like autocorrelation properties.
-5. **Inner Convolutional Coding ($r=1/2$, $K=7$):**
-   - The combined stream $[\text{ASM} + \text{RS\_Data}] = 32 + 16,320 = 16,352\text{ bits}$ enters the rate 1/2 convolutional encoder with generator polynomials $G_1 = 171_8$ and $G_2 = 133_8$ (with symbol inversion on $G_2$ per CCSDS).
-   - Generates $16,352 \times 2 = 32,704\text{ channel symbols}$ per CADU.
-6. **Gray QPSK Modulation & RRC Filtering:**
-   - 2 bits mapped to 1 complex symbol, producing $N_{sym} = 16,352\text{ symbols}$ per CADU frame.
-   - Pulse shaped via Root-Raised Cosine (RRC) filter with roll-off factor $\alpha = 0.5$ at $sps = 2$ samples per symbol.
+The method is the classic M-th power non-linearity followed by a spectral peak search (Viterbi and Viterbi, 1983; Rife and Boorstyn, 1974; Mengali and D'Andrea, 1997).
 
 ---
 
-## 3. Mathematical Formulation of the $M$-th Power Estimator
+## 2. Signal model
 
-### 3.1 Received Signal Model
-Consider the discrete-time baseband received signal sampled at $f_s = 1/T_s$:
+The received baseband signal, sampled at f_s, is
 
-$$r[n] = A[n] \cdot e^{j (2\pi \Delta f_D n T_s + \theta_0)} \cdot d[n] + w[n]$$
+$$r[n] = A\, e^{j(2\pi \Delta f_D n T_s + \theta_0)}\, d[n] + w[n]$$
 
-where:
-- $A[n]$ is the signal envelope normalized by the AGC ($E[A^2[n]] \approx 2$).
-- $\Delta f_D$ is the unknown carrier frequency offset (Doppler shift + LO offset).
-- $\theta_0$ is the arbitrary initial carrier phase.
-- $w[n]$ is Circular Complex Additive White Gaussian Noise, $w[n] \sim \mathcal{CN}(0, \sigma_w^2)$.
-- $d[n]$ is the digital QPSK modulation:
-  $$d[n] = \sum_{k} s_k \cdot p(n T_s - k T_{sym})$$
-  with $s_k \in \left\{ \frac{\pm 1 \pm j}{\sqrt{2}} \right\} = \left\{ e^{j (2m_k + 1) \frac{\pi}{4}} \right\}, \quad m_k \in \{0, 1, 2, 3\}$.
+- Δf_D is the unknown carrier offset (Doppler plus oscillator offsets) and θ₀ the initial phase.
+- w[n] is complex white Gaussian noise.
+- d[n] is the shaped QPSK signal, d[n] = Σ_k s_k p(nT_s − kT_sym), with symbols s_k = e^{j(2m_k+1)π/4}, m_k ∈ {0, 1, 2, 3}, and a root-raised-cosine pulse p (α = 0.5, 2 samples per symbol).
+
+The transmitted frame layout (ASM, Reed-Solomon codeword, scrambling, convolutional code) is described in the [README](../README.md). The estimator does not use it: it works on the modulated signal before any decoding.
 
 ---
 
-### 3.2 Modulation Wipe-off via 4th-Power Non-Linearity ($M = 4$)
-Raising the complex samples to the 4th power eliminates the QPSK modulation blindly:
+## 3. The M-th power estimator
 
-$$z[n] = (r[n])^4 = \left( A[n] e^{j (2\pi \Delta f_D n T_s + \theta_0)} d[n] + w[n] \right)^4$$
+### 3.1 Removing the modulation
 
-Expanding via the multinomial theorem:
-$$z[n] = \underbrace{A^4[n] e^{j 4(2\pi \Delta f_D n T_s + \theta_0)} (d[n])^4}_{\text{Signal Term } s_4[n]} + \underbrace{\sum_{p=1}^{4} \binom{4}{p} \left( A[n] e^{j(2\pi \Delta f_D n T_s + \theta_0)} d[n] \right)^{4-p} (w[n])^p}_{\text{Composite Noise Term } \eta[n]}$$
+For every QPSK symbol,
 
-#### Signal Term Analysis ($s_4[n]$):
-Evaluating the 4th power of any valid QPSK constellation symbol $s_k$:
-$$(s_k)^4 = \left( e^{j (2m_k + 1) \frac{\pi}{4}} \right)^4 = e^{j (2m_k + 1) \pi} = e^{j 2\pi m_k} \cdot e^{j \pi} = 1 \cdot (-1) = -1 \quad \forall m_k \in \{0, 1, 2, 3\}$$
+$$s_k^4 = e^{j(2m_k+1)\pi} = -1 \quad \text{for all } m_k,$$
 
-Regardless of whether the transmitted symbol is a data bit or part of the ASM, **the modulation phase is cancelled identically** and collapses to a constant deterministic scalar:
-$$(d[n])^4 \approx -K_{pulse}$$
+so the data cancel when the signal is raised to the 4th power. Ideal, unfiltered symbols would therefore give
 
-Therefore, the signal term collapses to a pure harmonic tone at quadruple the Doppler frequency:
-$$s_4[n] = - K \cdot e^{j (2\pi (4\Delta f_D) n T_s + 4\theta_0)} \implies f_{tone} = 4 \cdot \Delta f_D$$
+$$z[n] = r[n]^4 = -A^4\, e^{j(2\pi\,(4\Delta f_D)\, n T_s + 4\theta_0)} + \text{noise terms},$$
 
----
+a single tone at **4·Δf_D**. For a BPSK signal the same holds with M = 2.
 
-### 3.3 Noise Analysis and Squaring Loss
-The composite noise term $\eta[n]$ introduces cross-terms between signal and noise:
-$$\eta[n] = 4 s^3[n] w[n] + 6 s^2[n] w^2[n] + 4 s[n] w^3[n] + w^4[n]$$
+With pulse shaping the result is not exactly a constant. Between symbol instants the samples of d[n] are combinations of neighbouring symbols, so d[n]⁴ has a non-zero mean, whose size depends on the pulse and on the sampling instant, plus a fluctuating part that behaves as extra noise. The tone is still there, with less power than the ideal case. The estimator does not need its amplitude, only its position.
 
-The output tone SNR is degraded relative to the input SNR by the **Quadrupling Loss** ($S_L$):
-$$S_L = \frac{SNR_{in}}{SNR_4} \approx 1 + \frac{9}{SNR_{in}} + \frac{6}{SNR_{in}^2} + \frac{1.5}{SNR_{in}^3}$$
+### 3.2 Noise
 
-To overcome this noise degradation and recover the $4\Delta f_D$ tone, coherent integration gain is provided by the FFT.
+Expanding the 4th power of signal plus noise gives, besides the tone, cross terms of the form 4 s³ w, 6 s² w², 4 s w³ and w⁴. The tone-to-noise ratio after the non-linearity is therefore much lower than the input SNR, and the penalty grows quickly as the input SNR drops (the "squaring loss"). I do not give a closed-form value for it here. What matters in practice is that the FFT below recovers part of this loss by integrating the tone coherently.
 
----
+### 3.3 Peak search
 
-## 4. FFT Spectral Detection and Sub-Bin Interpolation
+An N-point windowed FFT of z[n] concentrates the tone energy in one bin. Integrating N samples coherently raises the tone above the noise floor by about 10·log₁₀(N) dB relative to a single sample. For N = 16384 this is 42.1 dB; this is a gain over the single-sample ratio, not a guarantee of any absolute margin, which depends on the SNR at the input.
 
-### 4.1 Coherent Processing Gain via FFT
-Taking an $N_{FFT}$-sample window of $z[n]$ with a Hanning or Blackman-Harris window:
-$$Z[k] = \sum_{n=0}^{N_{FFT}-1} z[n] w_H[n] \cdot e^{-j \frac{2\pi}{N_{FFT}} k n}, \quad P[k] = |Z[k]|^2$$
+Because the tone sits at 4·Δf_D, a bin of the FFT corresponds to a carrier offset of one quarter of its width in frequency:
 
-The coherent processing gain provided by the FFT is:
-$$G_{FFT} = 10 \log_{10}(N_{FFT})\text{ [dB]}$$
+$$\Delta f_{\text{bin}} = \frac{f_{\text{eff}}}{M\, N}, \qquad f_{\text{eff}} = \frac{f_s}{D}$$
 
-For an FFT length $N_{FFT} = 4096$:
-$$G_{FFT} = 10 \log_{10}(4096) \approx 36.12\text{ dB}$$
+where D is the decimation factor applied before the non-linearity.
 
-This $36.1\text{ dB}$ gain exceeds the quadrupling loss $S_L$, allowing the $4\Delta f_D$ tone to emerge $10\text{ to }20\text{ dB}$ above the noise floor even at $E_b/N_0 = 1.5\text{ dB}$.
+### 3.4 Sub-bin interpolation
 
----
+The block refines the peak with a 3-point parabolic interpolation on the power spectrum P[k] = |Z[k]|²:
 
-### 4.2 Sub-Bin Quadratic Interpolation (Jacobsen / Rife-Boorstyn)
-The raw carrier frequency resolution of a single FFT bin is:
-$$\Delta f_{carrier, bin} = \frac{f_s}{4 \cdot N_{FFT}} = \frac{25 \times 10^6}{4 \times 4096} = 1525.88\text{ Hz}$$
+$$\delta = \frac{1}{2}\,\frac{P[k_{\max}-1] - P[k_{\max}+1]}{P[k_{\max}-1] - 2P[k_{\max}] + P[k_{\max}+1]}, \qquad \delta \in [-0.5, 0.5]$$
 
-To achieve sub-Hertz accuracy without exponentially increasing $N_{FFT}$, a 3-point parabolic interpolator is applied around the peak spectral bin $k_{max}$:
-$$\alpha = P[k_{max}-1], \quad \beta = P[k_{max}], \quad \gamma = P[k_{max}+1]$$
-$$\delta = \frac{1}{2} \cdot \frac{\alpha - \gamma}{\alpha - 2\beta + \gamma}, \quad \delta \in [-0.5, +0.5]$$
+$$\widehat{\Delta f_D} = \frac{(k_{\max} + \delta)\, f_{\text{eff}}}{M\, N}$$
 
-The resulting Doppler carrier estimate is:
-$$\widehat{\Delta f_D} = \frac{(k_{max} + \delta) \cdot f_s}{4 \cdot N_{FFT}}$$
+This is a quadratic interpolation of the kind analysed by Rife and Boorstyn. It is not the Jacobsen estimator, which works on the complex FFT bins instead of the power. The parabolic estimate carries a small bias that depends on the window and on the true position between bins.
 
-The variance of this sub-bin estimator approaches the **Modified Cramér-Rao Bound (MCRB)**:
-$$\sigma_{\Delta f} < 15\text{ Hz}$$
+### 3.5 From estimate to correction
+
+After each estimate the block:
+
+1. Compares the peak with the average power outside ±8 bins of it, and ignores the estimate if the ratio is below `threshold_db`.
+2. Smooths it with a first-order filter, f̂ ← (1 − α)·f̂ + α·f_new.
+3. Updates a numerically controlled oscillator running at the full sample rate that multiplies the signal by e^{−j2π f̂ n / f_s}.
+4. Publishes f̂ on the `freq` message port as `("freq_hz", value)`.
 
 ---
 
-## 5. Receiver Integration Architecture
+## 4. Parameters used in the flowgraph
+
+| Parameter | Value | Note |
+| :--- | :--- | :--- |
+| Sample rate f_s | 25 MS/s | 12.5 MBd QPSK at 2 samples per symbol |
+| Decimation D | 8 | f_eff = 3.125 MS/s |
+| FFT size N | 16384 | Buffer of D·N = 131,072 input samples (5.24 ms) |
+| Update interval | 131,072 samples | One estimate per full buffer, about every 5.2 ms |
+| Order M | 4 | QPSK |
+| Smoothing α | 0.7 | |
+| Detection threshold | 1.0 dB | |
+| Bin width, tone domain | 190.7 Hz | f_eff / N |
+| Bin width, carrier domain | 47.7 Hz | f_eff / (M·N) |
+| Unambiguous range | ±390 kHz | \|4·Δf_D\| < f_eff / 2 |
+| Coherent gain | 42.1 dB | 10·log₁₀(N) |
+
+The unambiguous range covers the ±250 kHz Doppler plus the oscillator offsets. With a drift of 2.5 kHz/s, the offset changes by about 13 Hz during one 5.2 ms buffer, well below the 47.7 Hz bin width.
 
 ```mermaid
-flowchart TD
-    subgraph RF_Stage["1. RF Front-End & Digitization"]
-        RF_IN["Baseband I/Q Input<br/>fs = 25 MSps"] --> AGC["Analog AGC<br/>(Amplitude Normalization)"]
-    end
-
-    subgraph Blind_Estimator["2. Blind Doppler Estimator (4th-Power + FFT)"]
-        AGC --> BUF["Periodic Sample Buffer<br/>(Every 20-50 ms in worker thread)"]
-        BUF --> DECIM["FIR Decimator (D = 8)<br/>fs_dec = 3.125 MSps"]
-        DECIM --> POW4["4th-Power Non-Linearity<br/>z[n] = (r_dec[n])^4"]
-        POW4 --> FFT["4096-pt FFT + Hanning Window"]
-        FFT --> PEAK["Peak Search (k_max)<br/>+ Sub-Bin Interpolation (δ)"]
-        PEAK --> CALC["Doppler Calculation:<br/>f_est = (k_max + δ) * fs_dec / (4 * 4096)"]
-    end
-
-    subgraph Coarse_Correction["3. Coherent Derotation"]
-        AGC --> ROT["Complex Rotator (NCO)<br/>blocks.rotator_cc"]
-        CALC -.->|"Update frequency<br/>f_rot = - f_est"| ROT
-    end
-
-    subgraph Hier_Rx["4. Hierarchical Receiver (ccsds_concatenated_rx)"]
-        ROT --> PFB["PFB Clock Sync (sps=2)"]
-        PFB --> COSTAS["Costas Loop QPSK<br/>(Fine Residual Tracking ±500 Hz)"]
-        COSTAS --> SOFT["Soft Demapper LLR"]
-        SOFT --> VIT["Dual-Branch Viterbi Decoders<br/>(Rate 1/2, K=7)"]
-        VIT --> SYNC["Fast Flywheel Frame Sync<br/>(ASM 0x1ACFFC1D / 0xE53003E2)"]
-        SYNC --> DESCRAM["CCSDS Descrambler"]
-        DESCRAM --> RS["Reed-Solomon Decoder (I=8)<br/>satellites.decode_rs"]
-        RS --> SINK["Valid Transfer Frames (1784 Bytes)<br/>file_sink / Socket"]
-    end
+flowchart LR
+    IN["Baseband input<br/>25 MS/s"] --> BUF["Buffer<br/>D·N samples"]
+    BUF --> DEC["Keep 1 of every D<br/>(no filter)"]
+    DEC --> POW["4th power<br/>+ Hann window"]
+    POW --> FFT["N-point FFT"]
+    FFT --> PEAK["Peak, threshold,<br/>parabolic interpolation"]
+    PEAK --> SMOOTH["Smoothing<br/>(alpha)"]
+    SMOOTH --> NCO["NCO"]
+    IN --> NCO
+    NCO --> OUT["Corrected signal<br/>to the receiver"]
+    SMOOTH --> MSG["Message port freq"]
 ```
 
----
-
-## 6. Numerical Parameter Sizing for CHESS Mission
-
-| Design Parameter | Symbol | Recommended Value | Technical Justification |
-| :--- | :--- | :--- | :--- |
-| **Input Sampling Rate** | $f_s$ | $25.0\text{ MSps}$ | Supports QPSK at $12.5\text{ MBaud}$ with $sps=2$. |
-| **Decimation Factor** | $D$ | $8$ | Yields $f_{s,dec} = 3.125\text{ MSps}$; covers $\pm 250\text{ kHz}$ Doppler with margin. |
-| **FFT Size** | $N_{FFT}$ | $4096\text{ points}$ | Provides $36.1\text{ dB}$ processing gain with $<0.1\text{ ms}$ compute latency. |
-| **Native FFT Resolution** | $\Delta f_{bin}$ | $190.73\text{ Hz}$ | $\frac{3.125\text{ MHz}}{4 \times 4096}$. |
-| **Interpolated Resolution** | $\sigma_{\Delta f}$ | $< 15\text{ Hz}$ | Sub-bin parabolic interpolation. |
-| **Update Interval** | $T_{up}$ | $20 - 50\text{ ms}$ | At $\dot{f}_D = 2.5\text{ kHz/s}$, frequency drift between updates is $< 100\text{ Hz}$. |
-| **Estimated CPU Load** | $\text{CPU}$ | $< 1.5\%$ | Efficient decoupled block execution. |
+The corrected signal then goes to the hierarchical receiver: polyphase timing recovery, Costas loop for the residual offset, soft demapping and Viterbi decoding, frame synchronization, descrambling and Reed-Solomon decoding.
 
 ---
 
-## 7. References
+## 5. Limitations
 
-1. **Viterbi, A. J., & Viterbi, A. M. (1983).** *Nonlinear estimation of PSK-modulated carrier phase with application to burst digital transmission*. IEEE Transactions on Information Theory, 29(4), 543–551. [DOI: 10.1109/TIT.1983.1056713](https://doi.org/10.1109/TIT.1983.1056713).
-2. **Rife, D. C., & Boorstyn, R. R. (1974).** *Single-tone parameter estimation from discrete-time observations*. IEEE Transactions on Information Theory, 20(5), 591–598. [DOI: 10.1109/TIT.1974.1055282](https://doi.org/10.1109/TIT.1974.1055282).
-3. **Jacobsen, E., & Kootsookos, P. (2007).** *Fast, accurate frequency estimators*. IEEE Signal Processing Magazine, 24(3), 123–125. [DOI: 10.1109/MSP.2007.361611](https://doi.org/10.1109/MSP.2007.361611).
-4. **Mengali, U., & D'Andrea, A. N. (1997).** *Synchronization Techniques for Digital Receivers*. Plenum Press, New York. [DOI: 10.1007/978-1-4899-1807-9](https://link.springer.com/book/10.1007/978-1-4899-1807-9).
-5. **CCSDS (2021).** *TM Synchronization and Channel Coding*. Recommendation for Space Data System Standards, CCSDS 131.0-B-5, Blue Book.
+- **No anti-aliasing filter before decimation.** The block keeps one of every D samples. Signal and noise outside ±f_eff/2 fold into the analysed band. A 12.5 MBd signal with α = 0.5 is about 18 MHz wide, much more than the 3.125 MHz of f_eff, so a lot of out-of-band power aliases into the FFT. The tone at 4·Δf_D still appears, but the tone-to-noise ratio is lower than with a filtered decimator. I have not measured how much is lost.
+- **Estimation accuracy is not characterised.** I have no measurement of the estimator's error versus E_b/N₀ or drift rate, and I do not compare it to the Cramér-Rao bound. The bin width above is what the algorithm resolves without interpolation; the accuracy after interpolation and smoothing has not been quantified.
+- **Piecewise-constant correction.** The frequency is updated once per buffer and applied as a constant until the next update, so it lags the drift by up to one buffer.
+- **Simulation only.** The results in the [README](../README.md) come from the simulated channel of `chess.downlink_channel`. The estimator has not been run on a recording of a real satellite signal.
+
+---
+
+## References
+
+1. A. J. Viterbi and A. M. Viterbi, "Nonlinear estimation of PSK-modulated carrier phase with application to burst digital transmission," *IEEE Trans. Inf. Theory*, vol. 29, no. 4, pp. 543–551, 1983. doi:10.1109/TIT.1983.1056713
+2. D. C. Rife and R. R. Boorstyn, "Single-tone parameter estimation from discrete-time observations," *IEEE Trans. Inf. Theory*, vol. 20, no. 5, pp. 591–598, 1974. doi:10.1109/TIT.1974.1055282
+3. E. Jacobsen and P. Kootsookos, "Fast, accurate frequency estimators," *IEEE Signal Process. Mag.*, vol. 24, no. 3, pp. 123–125, 2007. doi:10.1109/MSP.2007.361611
+4. U. Mengali and A. N. D'Andrea, *Synchronization Techniques for Digital Receivers*, Plenum Press, 1997.
+5. CCSDS, *TM Synchronization and Channel Coding*, CCSDS 131.0-B-5, Blue Book, Issue 5.

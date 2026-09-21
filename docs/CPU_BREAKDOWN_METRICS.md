@@ -76,7 +76,7 @@ This technical document details the empirical performance benchmarks and block-b
 - **TX Symbol Mapping (`chunks_to_symbols`):**
   - Relative Load: **0.88%**
   - Average CPU Consumption: **3.22%** of a core
-- **`chess_fast_sync` (Flywheel Frame Synchronizer & Ambiguity Resolver):**
+- **`chess_fast_sync` (Frame Synchronizer & Ambiguity Resolver):**
   - Relative Load: **0.32%**
   - Average CPU Consumption: **1.17%** of a core
 - **File I/O, Tagged Streams, Python Runtime, and OS Scheduling Overhead:**
@@ -158,7 +158,7 @@ This technical document details the empirical performance benchmarks and block-b
 - **TX Symbol Mapping (`chunks_to_symbols`):**
   - Relative Load: **0.87%**
   - Average CPU Consumption: **4.61%** of a core
-- **`chess_fast_sync` (Flywheel Frame Synchronizer & Ambiguity Resolver):**
+- **`chess_fast_sync` (Frame Synchronizer & Ambiguity Resolver):**
   - Relative Load: **0.26%**
   - Average CPU Consumption: **1.37%** of a core
 - **File I/O, Tagged Streams, Python Runtime, and OS Scheduling Overhead:**

@@ -24,7 +24,12 @@ SIM_SCRIPT = SCRIPTS_DIR / "benchmark_local_speed.py"
 
 env = os.environ.copy()
 env["PYTHONPATH"] = f"/usr/lib/python3/dist-packages:{os.path.expanduser('~/.local/state/gnuradio')}:{str(PROJECT_ROOT / 'flowgraphs')}"
-env["LD_LIBRARY_PATH"] = f"/home/dan/.local/lib/x86_64-linux-gnu:/home/dan/.local/lib:/usr/local/lib:/usr/lib:{env.get('LD_LIBRARY_PATH', '')}"
+env["LD_LIBRARY_PATH"] = ":".join([
+    os.path.expanduser("~/.local/lib/x86_64-linux-gnu"),
+    os.path.expanduser("~/.local/lib"),
+    "/usr/local/lib",
+    env.get("LD_LIBRARY_PATH", ""),
+])
 
 print("[*] Launching simulation process for local CPU profiling...")
 proc = subprocess.Popen(

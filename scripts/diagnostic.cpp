@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <string>
 #include <filesystem>
+#include <memory>
 
 namespace fs = std::filesystem;
 
@@ -56,8 +57,8 @@ int count_byte_errors(const uint8_t* a, const uint8_t* b, size_t length) {
     return errors;
 }
 
-void run_diagnostic(const std::string& rx_file, const std::string& result_file, const std::vector<uint8_t>& tx_data) {
-    size_t num_tx_frames = tx_data.size() / FRAME_SIZE;
+void run_diagnostic(const std::string& rx_file, const std::string& result_file, const uint8_t* tx_data, size_t tx_size) {
+    size_t num_tx_frames = tx_size / FRAME_SIZE;
 
     // Load RX file robustly
     std::ifstream rx_stream(rx_file, std::ios::binary | std::ios::ate);
@@ -71,7 +72,7 @@ void run_diagnostic(const std::string& rx_file, const std::string& result_file, 
     size_t num_rx_frames = rx_size / FRAME_SIZE;
     std::vector<uint8_t> rx_data(num_rx_frames * FRAME_SIZE);
     
-    // Leer y comprobar
+    // Read and verify
     rx_stream.read(reinterpret_cast<char*>(rx_data.data()), rx_data.size());
     size_t bytes_read = rx_stream.gcount();
     if (bytes_read != rx_data.size()) {
@@ -89,11 +90,11 @@ void run_diagnostic(const std::string& rx_file, const std::string& result_file, 
     
     size_t expected_seq = 0;
     
-    // Protecciones de límites
+    // Boundary protections
     size_t eval_end_idx = (num_tx_frames > TAIL_FRAMES) ? (num_tx_frames - TAIL_FRAMES) : 0;
     size_t total_eval_frames = (eval_end_idx > WARMUP_FRAMES) ? (eval_end_idx - WARMUP_FRAMES) : 0;
     
-    // Variables de tracking (alineadas con lógica Python)
+    // Tracking variables (aligned with Python logic)
     size_t valid_frames_count = 0;
     size_t crc_fails_count = 0;
     uint64_t sync_bit_errors = 0;
@@ -107,7 +108,7 @@ void run_diagnostic(const std::string& rx_file, const std::string& result_file, 
         size_t best_match_idx = expected_seq;
         int min_byte_err = FRAME_SIZE + 1;
 
-        // Búsqueda rápida
+        // Fast search
         for (size_t search_idx = expected_seq; search_idx < max_search; ++search_idx) {
             const uint8_t* current_tx_frame = &tx_data[search_idx * FRAME_SIZE];
             int err = count_byte_errors(current_tx_frame, current_rx_frame, FRAME_SIZE);
@@ -117,22 +118,22 @@ void run_diagnostic(const std::string& rx_file, const std::string& result_file, 
             }
         }
 
-        // Cuenta de bits reales
+        // Actual bit count
         int min_bit_err = count_bit_errors(&tx_data[best_match_idx * FRAME_SIZE], current_rx_frame, FRAME_SIZE);
 
-        // Umbral de basura
+        // Garbage threshold
         int error_threshold = static_cast<int>(FRAME_SIZE * 8 * 0.25);
         if (min_bit_err > error_threshold) continue; 
 
-        // Comprobación de CRC
+        // CRC Check
         uint16_t received_crc = (current_rx_frame[FRAME_SIZE - 2] << 8) | current_rx_frame[FRAME_SIZE - 1];
         bool crc_pass = (crc16_ccitt(current_rx_frame, FRAME_SIZE - 2) == received_crc);
 
-        // Evaluamos si cae en la ventana
+        // Evaluate if it falls within the window
         if (best_match_idx >= WARMUP_FRAMES && best_match_idx < eval_end_idx) {
             if (crc_pass) {
                 valid_frames_count++;
-                sync_bit_errors += min_bit_err; // Solo sumamos bits de tramas VÁLIDAS
+                sync_bit_errors += min_bit_err; // Only add bits from VALID frames
             } else {
                 crc_fails_count++;
             }
@@ -151,19 +152,19 @@ void run_diagnostic(const std::string& rx_file, const std::string& result_file, 
         expected_seq = best_match_idx + 1;
     }
 
-    // --- FINAL METRICS CALCULATION (ESPEJO DE PYTHON) ---
+    // --- FINAL METRICS CALCULATION (MIRROR OF PYTHON LOGIC) ---
     size_t matched_frames = valid_frames_count + crc_fails_count;
     size_t sync_lost_frames = (total_eval_frames > matched_frames) ? (total_eval_frames - matched_frames) : 0;
     
-    // Total tramas inútiles (perdidas + CRC fallado)
+    // Total useless frames (lost + CRC failed)
     size_t total_useless_frames = sync_lost_frames + crc_fails_count;
     double fer = total_eval_frames > 0 ? static_cast<double>(total_useless_frames) / total_eval_frames : 0.0;
     
-    // SYNC BER (Solo de tramas VÁLIDAS)
+    // SYNC BER (Only from VALID frames)
     uint64_t sync_total_bits = static_cast<uint64_t>(valid_frames_count) * FRAME_SIZE * 8;
     double sync_ber = sync_total_bits > 0 ? static_cast<double>(sync_bit_errors) / sync_total_bits : 0.0;
     
-    // SYSTEM BER (Añade penalización del 50% a TODAS las tramas inútiles)
+    // SYSTEM BER (Adds 50% penalty to ALL useless frames)
     uint64_t system_total_bits = static_cast<uint64_t>(total_eval_frames) * FRAME_SIZE * 8;
     uint64_t penalty_errors = static_cast<uint64_t>(total_useless_frames * FRAME_SIZE * 8 * 0.5);
     uint64_t total_system_errors = sync_bit_errors + penalty_errors;
@@ -191,11 +192,10 @@ std::string find_project_root() {
     const std::vector<std::string> candidates = {
         "../",
         "./",
-        "../../",
-        "/home/dan/Documents/PROJECTS/X-band TFG/"
+        "../../"
     };
     for (const auto& dir : candidates) {
-        if (fs::exists(dir + "data") || fs::exists(dir + "files")) {
+        if (fs::exists(dir + "data")) {
             return dir;
         }
     }
@@ -282,8 +282,9 @@ int main(int argc, char* argv[]) {
     }
     size_t tx_size = tx_stream.tellg();
     tx_stream.seekg(0, std::ios::beg);
-    std::vector<uint8_t> tx_data(tx_size);
-    tx_stream.read(reinterpret_cast<char*>(tx_data.data()), tx_size);
+    // Use unique_ptr to avoid zero-initialization overhead of std::vector for large files
+    std::unique_ptr<uint8_t[]> tx_data(new uint8_t[tx_size]);
+    tx_stream.read(reinterpret_cast<char*>(tx_data.get()), tx_size);
 
     std::sort(rx_files.begin(), rx_files.end());
 
@@ -306,7 +307,7 @@ int main(int argc, char* argv[]) {
         std::string rx_path = fs::exists(file_entry) ? file_entry : (SAMPLES_DIR + filename);
         std::string result_path = RESULT_DIR + "diagnostic_results_" + snr_value + ".txt";
 
-        run_diagnostic(rx_path, result_path, tx_data);
+        run_diagnostic(rx_path, result_path, tx_data.get(), tx_size);
     }
 
     std::cout << "=== BATCH PROCESSING FINISHED ===\n";
