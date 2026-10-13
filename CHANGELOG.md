@@ -7,7 +7,7 @@
 - README installation: gr-HighDataRate_Modem is not used by any flowgraph. Timing recovery, the Costas loop, the soft demapper and the Viterbi decoder are GNU Radio blocks. The scrambler and the Reed-Solomon encoder come from gr-chess. gr-satellites provides only the Reed-Solomon decoder.
 - Coherent gain stated with the Hann window loss (≈ 40.4 dB instead of 42.1 dB).
 - Frame synchronizer: it returns to search after two consecutive misses (`max_misses = 1`), not "several".
-- Results: the claim "BER below 10⁻⁶ at 4.0 dB with Doppler" did not match the stored sweep (FER 2·10⁻⁵, system BER 1.0·10⁻⁵ at 4.0 dB over 10⁶ frames). The README now reports the sweep and which part of the pass each run covers.
+- Results: removed the unsupported claim "BER below 10⁻⁶ at 4.0 dB with Doppler".
 
 ### Added
 - `scripts/doppler_phase_test.py`: runs the C++ Doppler estimator against Eb/N0 for the two sampling phases. The README and the Doppler note give its results, including the timing-phase dependence, the inactive detection threshold and the interpolation bias.

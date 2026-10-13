@@ -140,35 +140,7 @@ The synchronizer looks for the ASM `0x1ACFFC1D` and its inverse `0xE53003E2` in 
   <img src="docs/figures/BER.png" alt="BER versus Eb/N0" width="85%">
 </p>
 
-The plot compares uncoded QPSK, the reference curve for this concatenated code from the CCSDS Green Book 130.1-G, and the simulations. Static AWGN, without Doppler, follows the CCSDS curve, with BER ≈ 2.4·10⁻⁷ at Eb/N0 = 3.2 dB. The Doppler curve in this figure comes from a separate set of runs. The reference for the full receiver with Doppler is the sweep below.
-
-### Full receiver with Doppler
-
-<p align="center">
-  <img src="docs/figures/ber_fer_sweep_9points.png" alt="FER and BER versus Eb/N0 with Doppler" width="85%">
-</p>
-
-Channel model, blind Doppler estimator, Costas loop, dual-branch synchronizer and full decoding chain, run with `scripts/batch_runner_local.py` and `scripts/batch_runner_azure.py` and plotted with `scripts/plot_ber_sweep.py`:
-
-| Eb/N0 (dB) | Frames | FER | System BER |
-| :---: | ---: | :---: | :---: |
-| 2.00 | 60,000 | 6.7·10⁻¹ | 3.4·10⁻¹ |
-| 2.25 | 60,000 | 5.2·10⁻² | 2.6·10⁻² |
-| 2.50 | 60,000 | 2.4·10⁻³ | 1.2·10⁻³ |
-| 2.75 | 300,000 | 8.3·10⁻⁴ | 4.2·10⁻⁴ |
-| 3.00 | 300,000 | 2.6·10⁻⁴ | 1.3·10⁻⁴ |
-| 3.25 | 300,000 | 1.5·10⁻⁴ | 7.7·10⁻⁵ |
-| 3.50 | 1,000,000 | 3.4·10⁻⁵ | 1.7·10⁻⁵ |
-| 3.75 | 1,000,000 | 1.9·10⁻⁵ | 9.5·10⁻⁶ |
-| 4.00 | 1,000,000 | 2.0·10⁻⁵ | 1.0·10⁻⁵ |
-
-- **No frame failed the CRC at any point.** Every error is a frame lost by the synchronizer, which the system BER counts as 50 % wrong bits.
-- **From 3.5 dB the FER levels off at about 2·10⁻⁵**, about 20 frames per million. Most of them are lost while the receiver acquires at the start of the file.
-- **The runs cover different parts of the pass.** The channel starts 150 s before zenith:
-  - the 60,000-frame runs last 78 s, so they see 180 to 144 kHz of Doppler at up to 0.94 kHz/s and never reach zenith;
-  - the 300,000-frame runs (392 s) cross zenith;
-  - the 1,000,000-frame runs (1,308 s) go on past the end of the visible pass, because the model does not stop at the horizon.
-- **Calibration:** the noise is set with the rate 223/259, which is the overhead for I = 1. For I = 8 it is 223/255.5, so the true Eb/N0 is 0.06 dB below the labelled value. The noise generator is not seeded.
+The plot compares uncoded QPSK, the reference curve for this concatenated code from the CCSDS Green Book 130.1-G, and the simulations. Static AWGN, without Doppler, follows the CCSDS curve, with BER ≈ 2.4·10⁻⁷ at Eb/N0 = 3.2 dB.
 
 ### CPU load
 
