@@ -12,8 +12,10 @@ This note explains why the estimator is needed, how it works, which parameters t
 
 For a LEO pass at 8.4 GHz the carrier offset seen by the ground station has two parts:
 
-- Orbital Doppler, up to about ±250 kHz, changing at roughly 2.5 kHz/s near zenith.
+- Orbital Doppler: for the simulated pass (475 km, 90° maximum elevation, i = 53°) up to ±191 kHz, changing at up to 2.95 kHz/s at zenith. With i = 98° the figures are ±201 kHz and 3.25 kHz/s.
 - Oscillator offsets of the satellite transmitter and the receiver front end, in the order of ±30 to 50 kHz.
+
+The design budget for the total offset is ±250 kHz.
 
 A QPSK Costas loop has to use a narrow loop bandwidth to keep phase jitter low, so it can only pull in offsets of a few kilohertz at most. Outside that range it fails to lock or slips cycles. A coarse stage in front of it has to bring the residual offset inside the pull-in range. Doing this blindly, from the signal alone, avoids depending on orbit predictions (TLEs) or a tracking program.
 
@@ -49,7 +51,7 @@ $$z[n] = r[n]^4 = -A^4\, e^{j(2\pi\,(4\Delta f_D)\, n T_s + 4\theta_0)} + \text{
 
 a single tone at **4·Δf_D**. For a BPSK signal the same holds with M = 2.
 
-With pulse shaping the result is not exactly a constant. Between symbol instants the samples of d[n] are combinations of neighbouring symbols, so d[n]⁴ has a non-zero mean, whose size depends on the pulse and on the sampling instant, plus a fluctuating part that behaves as extra noise. The tone is still there, with less power than the ideal case. The estimator does not need its amplitude, only its position.
+With pulse shaping the result is not exactly a constant. Between symbol instants the samples of d[n] are combinations of neighbouring symbols, so d[n]⁴ has a non-zero mean, whose size depends on the pulse and on the sampling instant, plus a fluctuating part that behaves as extra noise. The tone is still there, with less power than the ideal case. For QPSK the mean has a closed form, $E\{d[n]^4\} = -\sum_k p(nT_s - kT_{sym})^4$. With the flowgraph's RRC taps it is −1.68 at the symbol centre and −0.23 half a symbol later: 17 dB less tone power. Since D = 8 is a multiple of the 2 samples per symbol, every sample the block keeps sits at the same point of the symbol, so the estimator's sensitivity depends on the timing phase of the signal (see §5).
 
 ### 3.2 Noise
 
@@ -57,7 +59,7 @@ Expanding the 4th power of signal plus noise gives, besides the tone, cross term
 
 ### 3.3 Peak search
 
-An N-point windowed FFT of z[n] concentrates the tone energy in one bin. Integrating N samples coherently raises the tone above the noise floor by about 10·log₁₀(N) dB relative to a single sample. For N = 16384 this is 42.1 dB; this is a gain over the single-sample ratio, not a guarantee of any absolute margin, which depends on the SNR at the input.
+An N-point windowed FFT of z[n] concentrates the tone energy in one bin. Integrating N samples coherently raises the tone above the noise floor by about 10·log₁₀(N) dB relative to a single sample. For N = 16384 this is 42.1 dB without a window, and about 40.4 dB with the Hann window, which costs 1.76 dB. This is a gain over the single-sample ratio, not a guarantee of any absolute margin, which depends on the SNR at the input.
 
 Because the tone sits at 4·Δf_D, a bin of the FFT corresponds to a carrier offset of one quarter of its width in frequency:
 
@@ -100,9 +102,9 @@ After each estimate the block:
 | Bin width, tone domain | 190.7 Hz | f_eff / N |
 | Bin width, carrier domain | 47.7 Hz | f_eff / (M·N) |
 | Unambiguous range | ±390 kHz | \|4·Δf_D\| < f_eff / 2 |
-| Coherent gain | 42.1 dB | 10·log₁₀(N) |
+| Coherent gain | ≈ 40.4 dB | 10·log₁₀(N) = 42.1 dB, minus 1.76 dB for the Hann window |
 
-The unambiguous range covers the ±250 kHz Doppler plus the oscillator offsets. With a drift of 2.5 kHz/s, the offset changes by about 13 Hz during one 5.2 ms buffer, well below the 47.7 Hz bin width.
+The unambiguous range covers the ±250 kHz budget. With a drift of 2.95 kHz/s, the offset changes by about 15 Hz during one 5.24 ms buffer, well below the 47.7 Hz bin width.
 
 ```mermaid
 flowchart LR
@@ -125,8 +127,16 @@ The corrected signal then goes to the hierarchical receiver: polyphase timing re
 ## 5. Limitations
 
 - **No anti-aliasing filter before decimation.** The block keeps one of every D samples. Signal and noise outside ±f_eff/2 fold into the analysed band. A 12.5 MBd signal with α = 0.5 is about 18 MHz wide, much more than the 3.125 MHz of f_eff, so a lot of out-of-band power aliases into the FFT. The tone at 4·Δf_D still appears, but the tone-to-noise ratio is lower than with a filtered decimator. I have not measured how much is lost.
-- **Estimation accuracy is not characterised.** I have no measurement of the estimator's error versus E_b/N₀ or drift rate, and I do not compare it to the Cramér-Rao bound. The bin width above is what the algorithm resolves without interpolation; the accuracy after interpolation and smoothing has not been quantified.
-- **Piecewise-constant correction.** The frequency is updated once per buffer and applied as a constant until the next update, so it lags the drift by up to one buffer.
+- **Accuracy depends on the timing phase.** Measured with the C++ block (`scripts/doppler_phase_test.py`, 20 trials per point, constant 150 kHz offset, smoothing settled):
+  - with the kept samples at the symbol centre, every estimate is correct from Eb/N0 = 2 dB, and 55 % at 1 dB;
+  - half a symbol later, every estimate is correct only from 8 dB, 70 % at 7 dB and 5 % at 6 dB;
+  - the RMS error of correct estimates is about 5 Hz in both cases.
+  
+  The simulated channel never moves the timing phase, and in this flowgraph the kept samples fall at the symbol centre. A real pass would not stay there. Raising every sample to the 4th power and averaging groups of D removes the dependence in a Python model of the block. It is not implemented yet.
+- **The detection threshold does not work.** With noise only, the highest bin is 9–11 dB above the average of the others, so `threshold_db = 1` never rejects an estimate.
+- **Interpolation bias.** The ≈ 5 Hz error does not decrease at high Eb/N0. It is mostly the bias of the parabolic fit on power with a Hann window. A fit on log-power reduces it.
+- **Start-up transient.** The smoothing filter starts at 0 Hz, so with α = 0.7 the estimate reaches the true offset over the first several buffers. At 150 kHz, 0.3⁶ of the offset (about 100 Hz) is still left after six buffers.
+- **Piecewise-constant correction.** The frequency is updated once per buffer and applied as a constant until the next update, so it lags the drift. Together with the smoothing, the lag at zenith is a few tens of Hz, well inside the Costas loop's pull-in range.
 - **Simulation only.** The results in the [README](../README.md) come from the simulated channel of `chess.downlink_channel`. The estimator has not been run on a recording of a real satellite signal.
 
 ---

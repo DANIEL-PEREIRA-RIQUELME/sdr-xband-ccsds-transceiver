@@ -63,7 +63,7 @@ graph TD
 
 ## Blind Doppler estimation
 
-At 8.4 GHz the carrier offset seen from the ground is up to about ±250 kHz from orbital Doppler, drifting at roughly 2.5 kHz/s near zenith, plus a few tens of kHz from oscillator offsets. A Costas loop needs a narrow bandwidth to keep phase jitter low, so it only pulls in a few kHz. A coarse stage in front of it removes most of the offset. I use the M-th power method, which needs no knowledge of the orbit:
+For the simulated pass (475 km, overhead, 8.4 GHz) the orbital Doppler reaches ±191 kHz and changes at up to 2.95 kHz/s at zenith. With the oscillator offsets of the satellite and the ground station, the design budget is ±250 kHz. A Costas loop needs a narrow bandwidth to keep phase jitter low, so it only pulls in a few kHz. A coarse stage in front of it removes most of the offset. I use the M-th power method, which needs no knowledge of the orbit:
 
 ```mermaid
 flowchart LR
@@ -79,11 +79,31 @@ For a QPSK symbol s = e^{j(2m+1)π/4}, raising to the 4th power gives s⁴ = −
 
 $$f_{\text{tone}} = 4\,\Delta f_D$$
 
-With pulse shaping the cancellation is not perfect, but the tone is still there and its position is all the estimator needs. The FFT collects the tone energy in one bin (about 42 dB of integration gain for 16384 points), and a parabolic fit around the peak refines the position within the bin. Dividing by four gives the carrier offset, whose bin width is
+With pulse shaping the cancellation is not perfect. The 4th power of a shaped sample is the tone plus a fluctuating part (self-noise), and the tone is much stronger at the centre of a symbol than between symbols: about 17 dB stronger with these RRC taps. Because the block keeps 1 sample in 8, and 8 is a multiple of the 2 samples per symbol, all the kept samples sit at the same point of the symbol. How well the estimator works therefore depends on the timing phase of the signal.
 
-$$\Delta f_{\text{bin}} = \frac{f_s / D}{4\,N_{\text{FFT}}} = \frac{3.125\ \text{MHz}}{4 \times 16384} \approx 47.7\ \text{Hz}.$$
+The 16384-point FFT gives about 40 dB of coherent integration gain (42.1 dB, minus 1.76 dB for the Hann window), and a parabolic fit around the peak refines the position within the bin. Dividing by four gives the carrier offset. One bin corresponds to
 
-An estimate is produced every 131,072 samples (5.2 ms) and smoothed with a first-order filter. Known limitations: the decimation has no anti-aliasing filter, and I have not measured the estimation error versus Eb/N0. Details and parameters are in [docs/Blind_Doppler_Estimation_Mth_Power_FFT_CCSDS.md](docs/Blind_Doppler_Estimation_Mth_Power_FFT_CCSDS.md).
+$$\Delta f_{\text{bin}} = \frac{f_s / D}{4\,N_{\text{FFT}}} = \frac{3.125\ \text{MHz}}{4 \times 16384} \approx 47.7\ \text{Hz},$$
+
+and the unambiguous range is ±390 kHz. An estimate is produced every 131,072 samples (5.24 ms) and smoothed with a first-order filter (α = 0.7).
+
+Measured with the C++ block (`scripts/doppler_phase_test.py`, 20 trials per point, constant 150 kHz offset):
+
+| Kept samples fall at | Correct in every trial from | Partial | RMS error |
+| :--- | :--- | :--- | :--- |
+| Symbol centre | Eb/N0 = 2 dB | 55 % at 1 dB | ≈ 5 Hz |
+| Half a symbol later | Eb/N0 = 8 dB | 70 % at 7 dB, 5 % at 6 dB | ≈ 5 Hz |
+
+The simulated channel never shifts the timing phase, and in this flowgraph the kept samples fall at the symbol centre, which is the good case. On a real pass the propagation delay is arbitrary and code Doppler makes the phase drift, so the estimator would move between the two rows.
+
+Known limitations:
+
+- The decimation has no anti-aliasing filter. That is the reason for the timing dependence above.
+- The 1 dB detection threshold never triggers: with noise only, the highest bin is already 9–11 dB above the average.
+- The ≈ 5 Hz error does not shrink at high Eb/N0. It is mostly the bias of parabolic interpolation on power with a Hann window, and interpolating on log-power reduces it.
+- Raising every sample to the 4th power and then averaging groups of 8 removes the timing dependence in a Python model of the block. It is not implemented in gr-chess yet.
+
+Details are in [docs/Blind_Doppler_Estimation_Mth_Power_FFT_CCSDS.md](docs/Blind_Doppler_Estimation_Mth_Power_FFT_CCSDS.md).
 
 ## Frame synchronization
 
@@ -93,7 +113,7 @@ A Costas loop on QPSK locks with a phase that is ambiguous by a multiple of 90°
   <img src="docs/figures/page_1_dual_branch_sync.png" alt="Dual-branch synchronizer flowgraph" width="95%">
 </p>
 
-The synchronizer looks for the ASM `0x1ACFFC1D` and its inverse `0xE53003E2` in both streams and locks to the first match. That covers the four phase ambiguities. While locked it expects an ASM every frame and only goes back to searching after several consecutive misses. It stays on the branch it locked to, so it resolves the ambiguity but does not prevent Costas cycle slips.
+The synchronizer looks for the ASM `0x1ACFFC1D` and its inverse `0xE53003E2` in both streams and locks to the first match. That covers the four phase ambiguities. While locked it expects an ASM every frame and keeps delivering frames at the expected position even when one is missed. With `max_misses = 1`, as in the flowgraph, it goes back to searching after two consecutive misses. It stays on the branch it locked to, so it resolves the ambiguity but does not prevent Costas cycle slips.
 
 ## Link parameters
 
@@ -105,11 +125,12 @@ The synchronizer looks for the ASM `0x1ACFFC1D` and its inverse `0xE53003E2` in 
 | Raw channel rate | 25 Mbps |
 | Net telemetry rate | ≈ 10.9 Mbps |
 | Outer code | RS(255,223), t = 16, I = 8 (1,784 bytes per frame) |
-| Inner code | Convolutional r = 1/2, K = 7, (171, 133) octal |
+| Inner code | Convolutional r = 1/2, K = 7, (171, 133) octal, G2 inverted |
 | Randomizer | h(x) = x⁸ + x⁷ + x⁵ + x³ + 1 |
 | Attached sync marker | `0x1ACFFC1D` |
-| Orbit | 475 km, sun-synchronous, i = 98° |
-| Doppler | ±250 kHz, up to 2.5 kHz/s |
+| Simulated pass | 475 km circular orbit, overhead pass (90° maximum elevation), i = 53° |
+| Orbital Doppler (simulated pass) | ±191 kHz, up to 2.95 kHz/s at zenith |
+| Doppler budget | ±250 kHz including oscillator offsets |
 
 ## Results
 
@@ -119,10 +140,35 @@ The synchronizer looks for the ASM `0x1ACFFC1D` and its inverse `0xE53003E2` in 
   <img src="docs/figures/BER.png" alt="BER versus Eb/N0" width="85%">
 </p>
 
-The plot compares uncoded QPSK, the reference curve for this concatenated code from the CCSDS Green Book 130.1-G, and two simulations: static AWGN, and AWGN with the Doppler profile above using the blind estimator and the Costas loop.
+The plot compares uncoded QPSK, the reference curve for this concatenated code from the CCSDS Green Book 130.1-G, and the simulations. Static AWGN, without Doppler, follows the CCSDS curve, with BER ≈ 2.4·10⁻⁷ at Eb/N0 = 3.2 dB. The Doppler curve in this figure comes from a separate set of runs. The reference for the full receiver with Doppler is the sweep below.
 
-- Static AWGN follows the CCSDS curve, with BER ≈ 2.4·10⁻⁷ at Eb/N0 = 3.2 dB.
-- With Doppler the waterfall is shifted by about 0.8 dB and BER drops below 10⁻⁶ at 4.0 dB.
+### Full receiver with Doppler
+
+<p align="center">
+  <img src="docs/figures/ber_fer_sweep_9points.png" alt="FER and BER versus Eb/N0 with Doppler" width="85%">
+</p>
+
+Channel model, blind Doppler estimator, Costas loop, dual-branch synchronizer and full decoding chain, run with `scripts/batch_runner_local.py` and `scripts/batch_runner_azure.py` and plotted with `scripts/plot_ber_sweep.py`:
+
+| Eb/N0 (dB) | Frames | FER | System BER |
+| :---: | ---: | :---: | :---: |
+| 2.00 | 60,000 | 6.7·10⁻¹ | 3.4·10⁻¹ |
+| 2.25 | 60,000 | 5.2·10⁻² | 2.6·10⁻² |
+| 2.50 | 60,000 | 2.4·10⁻³ | 1.2·10⁻³ |
+| 2.75 | 300,000 | 8.3·10⁻⁴ | 4.2·10⁻⁴ |
+| 3.00 | 300,000 | 2.6·10⁻⁴ | 1.3·10⁻⁴ |
+| 3.25 | 300,000 | 1.5·10⁻⁴ | 7.7·10⁻⁵ |
+| 3.50 | 1,000,000 | 3.4·10⁻⁵ | 1.7·10⁻⁵ |
+| 3.75 | 1,000,000 | 1.9·10⁻⁵ | 9.5·10⁻⁶ |
+| 4.00 | 1,000,000 | 2.0·10⁻⁵ | 1.0·10⁻⁵ |
+
+- **No frame failed the CRC at any point.** Every error is a frame lost by the synchronizer, which the system BER counts as 50 % wrong bits.
+- **From 3.5 dB the FER levels off at about 2·10⁻⁵**, about 20 frames per million. Most of them are lost while the receiver acquires at the start of the file.
+- **The runs cover different parts of the pass.** The channel starts 150 s before zenith:
+  - the 60,000-frame runs last 78 s, so they see 180 to 144 kHz of Doppler at up to 0.94 kHz/s and never reach zenith;
+  - the 300,000-frame runs (392 s) cross zenith;
+  - the 1,000,000-frame runs (1,308 s) go on past the end of the visible pass, because the model does not stop at the horizon.
+- **Calibration:** the noise is set with the rate 223/259, which is the overhead for I = 1. For I = 8 it is 223/255.5, so the true Eb/N0 is 0.06 dB below the labelled value. The noise generator is not seeded.
 
 ### CPU load
 
@@ -143,13 +189,14 @@ sudo apt install -y gnuradio gnuradio-dev cmake g++ git \
                     pybind11-dev libfmt-dev libspdlog-dev libvolk-dev
 ```
 
-Three out-of-tree modules are needed. Build each with `mkdir build && cd build && cmake .. && make -j$(nproc) && sudo make install && sudo ldconfig`.
+Two out-of-tree modules are needed. Build each with `mkdir build && cd build && cmake .. && make -j$(nproc) && sudo make install && sudo ldconfig`.
 
 | Module | Used for |
 | :--- | :--- |
-| [gr-chess](https://github.com/DANIEL-PEREIRA-RIQUELME/gr-chess) | Doppler estimator, channel model, frame synchronizer |
-| [gr-HighDataRate_Modem](https://github.com/DavidToddMiller/gr-HighDataRate_Modem) | Soft demapper, Viterbi decoder, timing recovery |
-| [gr-satellites](https://github.com/daniestevez/gr-satellites) | Scrambler and Reed-Solomon blocks |
+| [gr-chess](https://github.com/DANIEL-PEREIRA-RIQUELME/gr-chess) | Doppler estimator, channel model, frame synchronizer, Reed-Solomon encoder, scrambler and descrambler |
+| [gr-satellites](https://github.com/daniestevez/gr-satellites) | Reed-Solomon decoder |
+
+Timing recovery, the Costas loop, the soft demapper and the Viterbi decoder are GNU Radio's own blocks (`gr-digital`, `gr-fec`).
 
 Then compile the hierarchical blocks:
 
@@ -181,6 +228,7 @@ Other tools:
 ```bash
 python3 scripts/generate_test_frames.py --frames 10000 --output data/custom_test_frames.bin
 g++ -O3 -std=c++20 scripts/diagnostic.cpp -o scripts/diagnostic    # frame analyzer, built automatically when needed
+python3 scripts/doppler_phase_test.py      # Doppler estimator vs Eb/N0 and sampling phase (about 1 min)
 ```
 
 ## Repository layout

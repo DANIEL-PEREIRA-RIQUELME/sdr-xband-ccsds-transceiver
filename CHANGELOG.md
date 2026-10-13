@@ -1,5 +1,19 @@
 # Changelog
 
+## Documentation review (2026-10-13)
+
+### Fixed
+- README and Doppler note: the orbital Doppler of the simulated pass is ±191 kHz with up to 2.95 kHz/s at zenith, not ±250 kHz with 2.5 kHz/s. ±250 kHz is the budget including oscillator offsets. The channel uses i = 53°, not a 98° sun-synchronous orbit.
+- README installation: gr-HighDataRate_Modem is not used by any flowgraph. Timing recovery, the Costas loop, the soft demapper and the Viterbi decoder are GNU Radio blocks. The scrambler and the Reed-Solomon encoder come from gr-chess. gr-satellites provides only the Reed-Solomon decoder.
+- Coherent gain stated with the Hann window loss (≈ 40.4 dB instead of 42.1 dB).
+- Frame synchronizer: it returns to search after two consecutive misses (`max_misses = 1`), not "several".
+- Results: the claim "BER below 10⁻⁶ at 4.0 dB with Doppler" did not match the stored sweep (FER 2·10⁻⁵, system BER 1.0·10⁻⁵ at 4.0 dB over 10⁶ frames). The README now reports the sweep and which part of the pass each run covers.
+
+### Added
+- `scripts/doppler_phase_test.py`: runs the C++ Doppler estimator against Eb/N0 for the two sampling phases. The README and the Doppler note give its results, including the timing-phase dependence, the inactive detection threshold and the interpolation bias.
+- Note on the Eb/N0 calibration: the noise uses the I = 1 rate 223/259. For I = 8 the true Eb/N0 is 0.06 dB lower.
+
+
 ## Pre-release review (2026-09)
 
 ### Fixed
